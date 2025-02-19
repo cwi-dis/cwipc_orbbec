@@ -6,6 +6,7 @@
 #include "cwipc_util/api_pcl.h"
 #include "cwipc_util/api.h"
 #include "cwipc_util/internal.h"
+#include "cwipc_orbbec/api.h"
 
 #include "libobsensor/hpp/Pipeline.hpp"
 
@@ -16,5 +17,5 @@ void helloWorld() {
 //
 // These static variables only exist to ensure the initializer is called, which registers our camera type.
 //
-//int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::count_devices, cwipc_orrbec);
-//int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_offline", nullptr, cwipc_orbbec_offline);
+// int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::count_devices, cwipc_orrbec);
+// int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_offline", nullptr, cwipc_orbbec_offline);
