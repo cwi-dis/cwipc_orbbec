@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16.0)
 add_library(cwipc_orbbec
 	SHARED
 	cwipc_orbbec.cpp
+	OrbbecCapture.cpp
 	# K4ACapture.cpp
 	# K4ACamera.cpp
 	# K4AOfflineCapture.cpp
@@ -14,6 +15,7 @@ add_library(cwipc_orbbec
 
 target_sources(cwipc_orbbec
 	PRIVATE
+	"OrbbecCapture.hpp"
 	# "K4AConfig.hpp"
 	# "K4ABaseCapture.hpp"
 	# "K4ABaseCamera.hpp"

@@ -3,19 +3,69 @@
 #define _CWIPC_KINECT_EXPORT __declspec(dllexport)
 #endif
 
+#include <inttypes.h>
+
 #include "cwipc_util/api_pcl.h"
 #include "cwipc_util/api.h"
 #include "cwipc_util/internal.h"
 #include "cwipc_orbbec/api.h"
 
-#include "libobsensor/hpp/Pipeline.hpp"
+#include "OrbbecCapture.hpp"
 
-void helloWorld() {
-    ob::Pipeline pipe;
+class cwipc_source_orbbec_impl : public cwipc_tiledsource {
+protected:
+public:
+    cwipc_source_orbbec_impl(const char *configFilename=NULL) {
+    }
+
+    ~cwipc_source_orbbec_impl() {
+    }
+};
+
+class cwipc_source_orbbec_offline_impl : public cwipc_tiledsource {
+protected:
+public:
+    cwipc_source_orbbec_offline_impl(const char* configFilename = NULL) {
+    }
+
+    ~cwipc_source_orbbec_offline_impl() {
+    }
+};
+
+//
+// C-compatible entry points
+//
+
+cwipc_tiledsource* cwipc_orbbec(const char *configFilename, char **errorMessage, uint64_t apiVersion) {
+    if (apiVersion < CWIPC_API_VERSION_OLD || apiVersion > CWIPC_API_VERSION) {
+        if (errorMessage) {
+            char* msgbuf = (char*)malloc(1024);
+            snprintf(msgbuf, 1024, "cwipc_kinect: incorrect apiVersion 0x%08" PRIx64 " expected 0x%08" PRIx64 "..0x%08" PRIx64 "", apiVersion, CWIPC_API_VERSION_OLD, CWIPC_API_VERSION);
+            *errorMessage = msgbuf;
+        }
+
+        return NULL;
+    }
+
+    return NULL;
+}
+
+cwipc_tiledsource* cwipc_orbbec_offline(const char* configFilename, char** errorMessage, uint64_t apiVersion) {
+    if (apiVersion < CWIPC_API_VERSION_OLD || apiVersion > CWIPC_API_VERSION) {
+        if (errorMessage) {
+            char* msgbuf = (char*)malloc(1024);
+            snprintf(msgbuf, 1024, "cwipc_k4aoffline: incorrect apiVersion 0x%08" PRIx64 " expected 0x%08" PRIx64 "..0x%08" PRIx64 "", apiVersion, CWIPC_API_VERSION_OLD, CWIPC_API_VERSION);
+            *errorMessage = msgbuf;
+        }
+
+        return NULL;
+    }
+
+    return NULL;
 }
 
 //
 // These static variables only exist to ensure the initializer is called, which registers our camera type.
 //
-// int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::count_devices, cwipc_orrbec);
-// int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_offline", nullptr, cwipc_orbbec_offline);
+int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::count_devices, cwipc_orbbec);
+int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_offline", nullptr, cwipc_orbbec_offline);
