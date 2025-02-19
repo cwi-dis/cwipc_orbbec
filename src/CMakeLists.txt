@@ -1,0 +1,95 @@
+cmake_minimum_required(VERSION 3.16.0)
+
+add_library(cwipc_orbbec
+	SHARED
+	cwipc_orbbec.cpp
+	# K4ACapture.cpp
+	# K4ACamera.cpp
+	# K4AOfflineCapture.cpp
+	# K4AOfflineCamera.cpp
+	# K4AConfig.cpp
+	# cwipc_pcl_additions.cpp
+	${TINY_SRC}
+)
+
+target_sources(cwipc_orbbec
+	PRIVATE
+	# "K4AConfig.hpp"
+	# "K4ABaseCapture.hpp"
+	# "K4ABaseCamera.hpp"
+	# "K4ACapture.hpp"
+	# "K4ACamera.hpp"
+	# "K4AOfflineCapture.hpp"
+	# "K4AOfflineCamera.hpp"
+	# "readerwriterqueue.h"
+	# "atomicops.h"
+	"../include/cwipc_orbbec/api.h"
+)
+
+target_link_libraries(cwipc_orbbec PUBLIC cwipc_util)
+target_link_libraries(cwipc_orbbec PRIVATE ${PCL_LIBRARIES})
+target_link_libraries(cwipc_orbbec PRIVATE OrbbecSDK)
+target_link_libraries(cwipc_orbbec PRIVATE opencv_core opencv_imgproc)
+target_link_libraries(cwipc_orbbec PRIVATE ZLIB::ZLIB) # Workaround for vcpkg
+target_link_libraries(cwipc_orbbec PRIVATE libjpeg-turbo::turbojpeg)
+target_link_libraries(cwipc_orbbec PRIVATE nlohmann_json::nlohmann_json)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND CMAKE_BUILD_TYPE MATCHES "Release")
+	target_compile_options(cwipc_orbbec PRIVATE /Zi)
+
+	# Tell linker to include symbol data
+	set_target_properties(cwipc_orbbec PROPERTIES
+	    LINK_FLAGS "/INCREMENTAL:NO /DEBUG /OPT:REF /OPT:ICF"
+	)
+
+	# Set file name & location
+	set_target_properties(cwipc_orbbec PROPERTIES
+	    COMPILE_PDB_NAME cwipc_orbbec
+	    COMPILE_PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
+	)
+
+	# Install pdb file
+	install(DIRECTORY ${PROJECT_BINARY_DIR}/Release
+		DESTINATION ${CMAKE_INSTALL_BINDIR}
+		FILES_MATCHING PATTERN *.pdb
+	)
+endif()
+
+if(WIN32)
+	install(TARGETS cwipc_orbbec
+	RUNTIME_DEPENDENCIES
+	PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "k4a"
+	POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+	EXPORT cwipc_orbbec
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	PUBLIC_HEADER DESTINATION "include/cwipc_orbbec"
+	)
+else()
+	install(TARGETS cwipc_orbbec
+	EXPORT cwipc_orbbec
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	PUBLIC_HEADER DESTINATION "include/cwipc_orbbec"
+	)
+endif()
+
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/cwipc_orbbec
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(FILES ${PROJECT_SOURCE_DIR}/CMakeFiles/cwipc_orbbec-config.cmake DESTINATION lib/cmake/cwipc_orbbec)
+
+install(EXPORT cwipc_orbbec DESTINATION lib/cmake/cwipc_orbbec)
+
+if(WIN32)
+	# Copy the dependent DLLs that cmake/vcpkg have created
+	#install(FILES $<TARGET_RUNTIME_DLLS:cwipc_orbbec> DESTINATION ${CMAKE_INSTALL_BINDIR})
+	# Hack to also copy the zlib and zstd DLLs (which are not picked up by cmake/vcpkg)
+	#install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/zlib1.dll DESTINATION ${CMAKE_INSTALL_BINDIR})
+	#install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/zstd.dll DESTINATION ${CMAKE_INSTALL_BINDIR})
+	# Copy the PDB file, if it exists
+	install(FILES $<TARGET_PDB_FILE:cwipc_orbbec> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+endif()
