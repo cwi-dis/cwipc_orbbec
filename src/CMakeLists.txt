@@ -28,7 +28,7 @@ target_sources(cwipc_orbbec
 
 target_link_libraries(cwipc_orbbec PUBLIC cwipc_util)
 target_link_libraries(cwipc_orbbec PRIVATE ${PCL_LIBRARIES})
-target_link_libraries(cwipc_orbbec PRIVATE OrbbecSDK)
+target_link_libraries(cwipc_orbbec PRIVATE OrbbecSDK::OrbbecSDK)
 target_link_libraries(cwipc_orbbec PRIVATE opencv_core opencv_imgproc)
 target_link_libraries(cwipc_orbbec PRIVATE ZLIB::ZLIB) # Workaround for vcpkg
 target_link_libraries(cwipc_orbbec PRIVATE libjpeg-turbo::turbojpeg)

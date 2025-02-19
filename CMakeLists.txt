@@ -16,11 +16,6 @@ if( CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
 	link_directories(${cwipc_util_LIBRARY_DIRS})
 endif()
 
-#
-# Find Orbbec SDK (either with pkgconfig or with cmake)
-#
-find_package(OrbbecSDK REQUIRED)
-
 # We need OpenCV for some image filtering
 
 find_package(OpenCV REQUIRED
