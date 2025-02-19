@@ -70,7 +70,7 @@ _CWIPC_ORBBEC_EXPORT cwipc_tiledsource* cwipc_orbbec(const char *configFilename,
  * cameras.
  */
 
-_CWIPC_ORBBEC_EXPORT cwipc_tiledsource* cwipc_oboffline(const char* configFilename, char** errorMessage, uint64_t apiVersion);
+_CWIPC_ORBBEC_EXPORT cwipc_tiledsource* cwipc_orbbec_offline(const char* configFilename, char** errorMessage, uint64_t apiVersion);
 
 /** \brief Free the offline converter.
  */
