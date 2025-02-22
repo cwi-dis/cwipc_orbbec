@@ -4,25 +4,17 @@ add_library(cwipc_orbbec
 	SHARED
 	cwipc_orbbec.cpp
 	OrbbecCapture.cpp
-	# K4ACapture.cpp
-	# K4ACamera.cpp
-	# K4AOfflineCapture.cpp
-	# K4AOfflineCamera.cpp
-	# K4AConfig.cpp
-	# cwipc_pcl_additions.cpp
-	${TINY_SRC}
+	OrbbecConfig.cpp
+	cwipc_pcl_additions.cpp
 )
 
 target_sources(cwipc_orbbec
 	PRIVATE
 	"OrbbecCapture.hpp"
-	# "K4AConfig.hpp"
-	# "K4ABaseCapture.hpp"
-	# "K4ABaseCamera.hpp"
-	# "K4ACapture.hpp"
-	# "K4ACamera.hpp"
-	# "K4AOfflineCapture.hpp"
-	# "K4AOfflineCamera.hpp"
+	"OrbbecCamera.hpp"
+	"OrbbecBaseCapture.hpp"
+	"OrbbecBaseCamera.hpp"
+	"OrbbecConfig.hpp"
 	# "readerwriterqueue.h"
 	# "atomicops.h"
 	"../include/cwipc_orbbec/api.h"
@@ -32,7 +24,7 @@ target_link_libraries(cwipc_orbbec PUBLIC cwipc_util)
 target_link_libraries(cwipc_orbbec PRIVATE ${PCL_LIBRARIES})
 target_link_libraries(cwipc_orbbec PRIVATE OrbbecSDK::OrbbecSDK)
 target_link_libraries(cwipc_orbbec PRIVATE opencv_core opencv_imgproc)
-target_link_libraries(cwipc_orbbec PRIVATE ZLIB::ZLIB) # Workaround for vcpkg
+target_link_libraries(cwipc_orbbec PRIVATE ZLIB::ZLIB)
 target_link_libraries(cwipc_orbbec PRIVATE libjpeg-turbo::turbojpeg)
 target_link_libraries(cwipc_orbbec PRIVATE nlohmann_json::nlohmann_json)
 
