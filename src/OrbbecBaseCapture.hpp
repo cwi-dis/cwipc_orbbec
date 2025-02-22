@@ -149,6 +149,8 @@ public:
   }
 
   virtual ~OrbbecBaseCapture() {
+    uint64_t stopTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    unloadCameras();
   }
 
   virtual bool configReload(const char* filename) = 0;
@@ -158,7 +160,6 @@ public:
   virtual uint64_t getBestTimestamp() = 0;
 
   virtual OrbbecCameraConfig* getCameraConfig(std::string serial) final {
-    // for (auto config : configuration.all_camera_configs) {
     for (int i = 0; i < configuration.all_camera_configs.size(); i++) {
       if (configuration.all_camera_configs[i].serial == serial) {
         return &configuration.all_camera_configs[i];
