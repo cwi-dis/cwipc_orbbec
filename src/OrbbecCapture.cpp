@@ -173,6 +173,36 @@ bool OrbbecCapture::configReload(const char* configFilename) {
   return false;
 }
 
+bool OrbbecCapture::captureAllCameras() {
+  bool capturesOk = true;
+
+  for (auto cam : cameras) {
+    if (!cam->captureFrameset()) {
+      capturesOk = false;
+    }
+  }
+
+  return capturesOk;
+}
+
+uint64_t OrbbecCapture::getBestTimestamp() {
+  uint64_t timestamp = 0;
+
+  for (auto cam : cameras) {
+    uint64_t cameraTimestamp = cam->getCaptureTimestamp();
+
+    if (cameraTimestamp > timestamp) {
+      timestamp = cameraTimestamp;
+    }
+  }
+
+  if (timestamp <= 0) {
+    timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+  }
+
+  return timestamp;
+}
+
 bool OrbbecCapture::seek(uint64_t timestamp) {
   return false;
 }

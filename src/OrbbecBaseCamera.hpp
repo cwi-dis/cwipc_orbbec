@@ -61,4 +61,8 @@ public:
   virtual bool isSyncMaster() {
     return cameraIsMaster;
   }
+
+  virtual uint64_t getCaptureTimestamp() final {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+  }
 };

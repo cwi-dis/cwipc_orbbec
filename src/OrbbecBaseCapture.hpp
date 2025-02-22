@@ -154,6 +154,9 @@ public:
   virtual bool configReload(const char* filename) = 0;
   virtual bool seek(uint64_t timestamp) = 0;
 
+  virtual bool captureAllCameras() = 0;
+  virtual uint64_t getBestTimestamp() = 0;
+
   virtual OrbbecCameraConfig* getCameraConfig(std::string serial) final {
     // for (auto config : configuration.all_camera_configs) {
     for (int i = 0; i < configuration.all_camera_configs.size(); i++) {

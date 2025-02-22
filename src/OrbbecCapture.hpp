@@ -9,7 +9,6 @@ class OrbbecCapture : public OrbbecBaseCapture<OrbbecCamera> {
   typedef ob::Device ApiCameraType;
   typedef OrbbecCamera CameraType;
 
-private:
   virtual bool applyDefaultConfig() override;
   bool initializeHardwareSettings();
   bool createCameras();
@@ -17,6 +16,9 @@ private:
 
 protected:
   OrbbecCapture();
+
+  bool captureAllCameras() override;
+  uint64_t getBestTimestamp() override;
 
 public:
   static int countDevices();
