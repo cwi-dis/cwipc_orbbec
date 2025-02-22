@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16.0)
 add_library(cwipc_orbbec
 	SHARED
 	cwipc_orbbec.cpp
+	OrbbecCamera.cpp
 	OrbbecCapture.cpp
 	OrbbecConfig.cpp
 	cwipc_pcl_additions.cpp
@@ -10,13 +11,12 @@ add_library(cwipc_orbbec
 
 target_sources(cwipc_orbbec
 	PRIVATE
-	"OrbbecCapture.hpp"
-	"OrbbecCamera.hpp"
-	"OrbbecBaseCapture.hpp"
 	"OrbbecBaseCamera.hpp"
+	"OrbbecBaseCapture.hpp"
+	"OrbbecCamera.hpp"
+	"OrbbecCapture.hpp"
 	"OrbbecConfig.hpp"
-	# "readerwriterqueue.h"
-	# "atomicops.h"
+	"readerwriterqueue.h"
 	"../include/cwipc_orbbec/api.h"
 )
 

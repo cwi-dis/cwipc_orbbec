@@ -1,5 +1,8 @@
 #pragma once
 
+#include <thread>
+#include "libobsensor/hpp/Device.hpp"
+
 #include "cwipc_util/api_pcl.h"
 #include "cwipc_util/internal.h"
 
@@ -23,7 +26,7 @@ struct OrbbecCameraProcessingParameters {
 
 struct OrbbecCameraConfig : CwipcBaseCameraConfig {
   bool disabled = false;  // to easily disable cameras without altering to much the cameraconfig.
-  void* handle = nullptr; // Will be set if camera is opened
+  std::shared_ptr<ob::Device> handle = nullptr; // Will be set if camera is opened
 
   std::string serial;   // Serial number of this camera
   std::string type = "orbbec";       // Camera type (must be realsense)
@@ -63,3 +66,14 @@ extern char** cwipc_orbbec_warning_store;
 bool cwipc_orbbec_jsonfile2config(const char* filename, OrbbecCaptureConfig* config, std::string type);
 bool cwipc_orbbec_jsonbuffer2config(const char* filename, OrbbecCaptureConfig* config, std::string type);
 std::string cwipc_orbbec_config2string(OrbbecCaptureConfig* config);
+
+#ifdef WIN32
+  #include <Windows.h>
+
+  inline void cwipc_setThreadName(std::thread* th, const wchar_t* name) {
+    HANDLE threadHandle = static_cast<HANDLE>(th->native_handle());
+    SetThreadDescription(threadHandle, name);
+  }
+#else
+  inline void cwipc_setThreadName(std::thread* th, const wchar_t* name) {}
+#endif

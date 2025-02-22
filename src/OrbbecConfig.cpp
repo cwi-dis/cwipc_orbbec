@@ -217,7 +217,7 @@ bool cwipc_orbbec_jsonfile2config(const char *filename, OrbbecCaptureConfig *con
   return true;
 }
 
-bool cwipc_k4a_jsonbuffer2config(const char *jsonBuffer, OrbbecCaptureConfig *config, std::string typeWanted) {
+bool cwipc_orbbec_jsonbuffer2config(const char *jsonBuffer, OrbbecCaptureConfig *config, std::string typeWanted) {
   json json_data;
 
   try {
@@ -251,7 +251,7 @@ bool cwipc_k4a_jsonbuffer2config(const char *jsonBuffer, OrbbecCaptureConfig *co
   return true;
 }
 
-std::string cwipc_k4a_config2string(OrbbecCaptureConfig *config) {
+std::string cwipc_orbbec_config2string(OrbbecCaptureConfig *config) {
   json result;
   to_json(result, *config);
 

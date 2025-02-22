@@ -14,12 +14,60 @@
 
 class cwipc_source_orbbec_impl : public cwipc_tiledsource {
 protected:
+    OrbbecCapture *grabber;
+
+    cwipc_source_orbbec_impl(OrbbecCapture *obj) : grabber(obj) {
+    }
+
 public:
-    cwipc_source_orbbec_impl(const char *configFilename=NULL) {
+    cwipc_source_orbbec_impl(const char *configFilename=NULL) : grabber(OrbbecCapture::factory()) {
+        grabber->configReload(configFilename);
     }
 
     ~cwipc_source_orbbec_impl() {
+        free();
     }
+
+    void free() {
+        delete grabber;
+        grabber = 0;
+    }
+
+    bool eof() {
+        return grabber->eof;
+    }
+
+    bool available(bool wait) {
+        if (grabber == 0) {
+            return false;
+        }
+
+        return grabber->pointcouldAvailable(wait);
+    }
+
+    cwipc* get() {
+        if (grabber == 0) {
+            return 0;
+        }
+
+        return grabber->getPointcloud();
+    }
+
+    int maxtile() {
+        if (grabber == 0) {
+            return 0;
+        }
+
+        int n = grabber->configuration.all_camera_configs.size();
+
+        if (n <= 1) {
+            return n;
+        }
+
+        return 1 << n;
+    }
+
+    bool get_tileinfo(int tilenum, struct cwipc_tileinfo* tileinfo) = 0;
 };
 
 class cwipc_source_orbbec_offline_impl : public cwipc_tiledsource {
@@ -67,5 +115,5 @@ cwipc_tiledsource* cwipc_orbbec_offline(const char* configFilename, char** error
 //
 // These static variables only exist to ensure the initializer is called, which registers our camera type.
 //
-int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::count_devices, cwipc_orbbec);
+int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::countDevices, cwipc_orbbec);
 int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_offline", nullptr, cwipc_orbbec_offline);
