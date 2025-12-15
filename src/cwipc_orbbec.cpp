@@ -28,6 +28,10 @@ public:
         free();
     }
 
+    bool is_valid() {
+        return true;
+    }
+
     void free() {
         delete grabber;
         grabber = 0;
@@ -67,16 +71,18 @@ public:
         return 1 << n;
     }
 
-    bool get_tileinfo(int tilenum, struct cwipc_tileinfo* tileinfo) = 0;
+    bool get_tileinfo(int tilenum, struct cwipc_tileinfo* tileinfo) {
+        return false;
+    }
 };
 
-class cwipc_source_orbbec_offline_impl : public cwipc_tiledsource {
+class cwipc_source_orbbec_playback_impl : public cwipc_tiledsource {
 protected:
 public:
-    cwipc_source_orbbec_offline_impl(const char* configFilename = NULL) {
+    cwipc_source_orbbec_playback_impl(const char* configFilename = NULL) {
     }
 
-    ~cwipc_source_orbbec_offline_impl() {
+    ~cwipc_source_orbbec_playback_impl() {
     }
 };
 
@@ -94,14 +100,19 @@ cwipc_tiledsource* cwipc_orbbec(const char *configFilename, char **errorMessage,
 
         return NULL;
     }
-    if (errorMessage) {
-        static char *tmp = (char *)"cwipc_orbbec() not yet implemented";
-        *errorMessage = tmp;
+    cwipc_source_orbbec_impl *rv = new cwipc_source_orbbec_impl(configFilename);
+    if (rv && rv->is_valid()) {
+        return rv;
     }
+    delete rv;
+    if (errorMessage && *errorMessage == NULL) {
+        *errorMessage = (char *)"cwipc_orbbec: no orbbec cameras found";
+    }
+
     return NULL;
 }
 
-cwipc_tiledsource* cwipc_orbbec_offline(const char* configFilename, char** errorMessage, uint64_t apiVersion) {
+cwipc_tiledsource* cwipc_orbbec_playback(const char* configFilename, char** errorMessage, uint64_t apiVersion) {
     if (apiVersion < CWIPC_API_VERSION_OLD || apiVersion > CWIPC_API_VERSION) {
         if (errorMessage) {
             char* msgbuf = (char*)malloc(1024);
@@ -111,8 +122,9 @@ cwipc_tiledsource* cwipc_orbbec_offline(const char* configFilename, char** error
 
         return NULL;
     }
+
     if (errorMessage) {
-        static char *tmp = (char *)"cwipc_orbbec_offline() not yet implemented";
+        char *tmp = (char *)"cwipc_orbbec_playback: unspecified error";
         *errorMessage = tmp;
     }
 
@@ -123,4 +135,4 @@ cwipc_tiledsource* cwipc_orbbec_offline(const char* configFilename, char** error
 // These static variables only exist to ensure the initializer is called, which registers our camera type.
 //
 int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::countDevices, cwipc_orbbec);
-int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_offline", nullptr, cwipc_orbbec_offline);
+int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_offline", nullptr, cwipc_orbbec_playback);
