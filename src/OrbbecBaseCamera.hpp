@@ -7,27 +7,32 @@
 #include "readerwriterqueue.h"
 
 #include "OrbbecConfig.hpp"
-
+typedef void *xxxjack_dont_know_yet;
 template<typename ApiCameraType> class OrbbecBaseCamera : public CwipcBaseCamera {
 protected:
   std::string CLASSNAME;
-  ApiCameraType* camera;
-
-  OrbbecCaptureConfig& config;
-  OrbbecCameraConfig& cameraConfig;
-
+  OrbbecCaptureConfig& configuration;
+  ApiCameraType* camera_handle;
   bool stopped = true;
-  bool cameraStarted = false;
-  bool processingDone = false;
+  bool camera_started = false;
 
-  bool cameraIsMaster;
-  bool cameraIsUsed;
-  bool heightFilteringEnabled;
+  OrbbecCameraConfig& camera_configuration;
 
-  std::string recordToFile;
+  bool processing_done = false;
 
-  moodycamel::BlockingReaderWriterQueue<ob::Frame> capturedFrameQueue;
-  moodycamel::BlockingReaderWriterQueue<ob::Frame> processingFrameQueue;
+  cwipc_pcl_pointcloud current_pointcloud = nullptr;  //<! Most recent grabbed pointcloud
+
+  moodycamel::BlockingReaderWriterQueue<ob::Frame> captured_frame_queue;
+  moodycamel::BlockingReaderWriterQueue<ob::Frame> processing_frame_queue;
+  ob::Frame current_frameset;
+  bool camera_sync_is_master;
+  bool camera_sync_is_used;
+  bool do_height_filtering;
+  std::mutex processing_mutex;  //<! Exclusive lock for frame to pointcloud processing.
+  std::condition_variable processing_done_cv; //<! Condition variable signalling pointcloud ready
+
+  std::string record_to_file;
+
 
   virtual void _start_capture_thread() = 0;
   virtual void _capture_thread_main() = 0;
@@ -35,20 +40,21 @@ protected:
 public:
   std::string serial;
   bool eof = false;
-  int cameraIndex;
+  int camera_index;
 
-  OrbbecBaseCamera(const std::string& classname, ApiCameraType* camera, OrbbecCaptureConfig& config, int cameraIndex, OrbbecCameraConfig& cameraConfig) :
-    CLASSNAME(classname),
-    camera(camera),
-    config(config),
-    cameraIndex(cameraIndex),
-    cameraConfig(cameraConfig),
-    serial(cameraConfig.serial),
-    cameraIsMaster(cameraConfig.serial == config.sync_master_serial),
-    cameraIsUsed(config.sync_master_serial != ""),
-    heightFilteringEnabled(config.height_min != config.height_max),
-    capturedFrameQueue(1),
-    processingFrameQueue(1) {
+  OrbbecBaseCamera(const std::string& _Classname, ApiCameraType* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration) :
+    CLASSNAME(_Classname),
+    camera_handle(_handle),
+    configuration(_configuration),
+    camera_index(_camera_index),
+    camera_configuration(_camera_configuration),
+    serial(_camera_configuration.serial),
+    current_frameset(nullptr),
+    camera_sync_is_master(_camera_configuration.serial == _configuration.sync_master_serial),
+    camera_sync_is_used(_configuration.sync_master_serial != ""),
+    do_height_filtering(_configuration.height_min != _configuration.height_max),
+    captured_frame_queue(1),
+    processing_frame_queue(1) {
   }
 
   virtual ~OrbbecBaseCamera() {
@@ -59,10 +65,30 @@ public:
   virtual void stop() = 0;
 
   virtual bool isSyncMaster() {
-    return cameraIsMaster;
+    return camera_sync_is_master;
   }
 
-  virtual uint64_t getCaptureTimestamp() final {
+  virtual void create_pc_from_frames() final {
+    assert(current_frameset);
+
+    if (!processing_frame_queue.try_enqueue(current_frameset)) {
+        std::cerr << CLASSNAME << ":  camera " << serial << ": drop frame before processing" << std::endl;
+        // xxxjack it seems Orbbec does this automatically. k4a_capture_release(current_frameset);
+    }
+
+}
+
+virtual void wait_for_pc() final {
+    std::unique_lock<std::mutex> lock(processing_mutex);
+    processing_done_cv.wait(lock, [this] { return processing_done; });
+    processing_done = false;
+}
+
+  virtual uint64_t get_capture_timestamp() final {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+  }
+
+  virtual cwipc_pcl_pointcloud get_current_pointcloud() final {
+      return current_pointcloud;
   }
 };

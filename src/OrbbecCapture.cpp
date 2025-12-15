@@ -189,7 +189,7 @@ uint64_t OrbbecCapture::_get_best_timestamp() {
   uint64_t timestamp = 0;
 
   for (auto cam : cameras) {
-    uint64_t cameraTimestamp = cam->getCaptureTimestamp();
+    uint64_t cameraTimestamp = cam->get_capture_timestamp();
 
     if (cameraTimestamp > timestamp) {
       timestamp = cameraTimestamp;

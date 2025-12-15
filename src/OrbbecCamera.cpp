@@ -3,7 +3,7 @@
 
 OrbbecCamera::OrbbecCamera(ApiCameraType* camera, OrbbecCaptureConfig& config, int cameraIndex, OrbbecCameraConfig& cameraConfig) : OrbbecBaseCamera("cwipc_orbbec: OrbbecCamera", camera, config, cameraIndex, cameraConfig) {
   if (config.record_to_directory != "") {
-    recordToFile = config.record_to_directory + "/" + cameraConfig.serial + ".mkv";
+    record_to_file = config.record_to_directory + "/" + cameraConfig.serial + ".mkv";
   }
 }
 
@@ -16,19 +16,19 @@ void OrbbecCamera::stop() {
   // XXX IMPLEMENT ME
 }
 
-void OrbbecCamera::startCapturer() {
+void OrbbecCamera::start_capturer() {
   // XXX IMPLEMENT ME
 }
 
-bool OrbbecCamera::captureFrameset() {
+bool OrbbecCamera::capture_frameset() {
   // XXX IMPLEMENT ME
   return false;
 }
 
-void OrbbecCamera::startCaptureThread() {
+void OrbbecCamera::_start_capture_thread() {
   // XXX IMPLEMENT ME
 }
 
-void OrbbecCamera::captureThreadFunction() {
+void OrbbecCamera::_capture_thread_main() {
   // XXX IMPLEMENT ME
 }

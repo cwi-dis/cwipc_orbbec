@@ -124,7 +124,7 @@ protected:
         continue;
       }
 
-      cam->startCapturer();
+      cam->start_capturer();
     }
 
     for (auto cam : cameras) {
@@ -132,7 +132,7 @@ protected:
         continue;
       }
 
-      cam->startCapturer();
+      cam->start_capturer();
     }
   }
 
