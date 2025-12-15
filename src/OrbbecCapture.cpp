@@ -83,7 +83,7 @@ bool OrbbecCapture::initializeHardwareSettings() {
       device->setBoolProperty(OB_PROP_COLOR_AUTO_WHITE_BALANCE_BOOL, true);
     }
 
-    if (configuration.camera_processing.color_backlight_compensation >= 0) {
+    if (configuration.camera_processing.color_backlight_compensation >= 0 && device->isPropertySupported(OB_PROP_COLOR_BACKLIGHT_COMPENSATION_INT, OB_PERMISSION_WRITE)) {
       device->setIntProperty(OB_PROP_COLOR_BACKLIGHT_COMPENSATION_INT, configuration.camera_processing.color_backlight_compensation);
     }
 
