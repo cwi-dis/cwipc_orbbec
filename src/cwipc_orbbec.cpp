@@ -21,7 +21,7 @@ protected:
 
 public:
     cwipc_source_orbbec_impl(const char *configFilename=NULL) : grabber(OrbbecCapture::factory()) {
-        grabber->configReload(configFilename);
+        grabber->config_reload(configFilename);
     }
 
     ~cwipc_source_orbbec_impl() {
@@ -46,7 +46,7 @@ public:
             return false;
         }
 
-        return grabber->pointcouldAvailable(wait);
+        return grabber->pointcloud_available(wait);
     }
 
     cwipc* get() {
@@ -54,7 +54,7 @@ public:
             return 0;
         }
 
-        return grabber->getPointcloud();
+        return grabber->get_pointcloud();
     }
 
     int maxtile() {

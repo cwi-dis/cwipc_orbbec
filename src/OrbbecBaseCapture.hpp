@@ -21,15 +21,15 @@ protected:
   cwipc* mergedPointcloud;
   std::mutex mergedPointcloudMutex;
 
-  bool mergedPointcloudIsFresh = false;
-  std::condition_variable mergedPointcloudIsFreshCV;
+  bool mergedPC_is_fresh = false;
+  std::condition_variable mergedPC_is_fresh_cv;
 
-  bool mergedPointcloudWantNew = false;
+  bool mergedPC_want_new = false;
   std::condition_variable mergedPointcloudWantNewCV;
 
   std::thread* controlThread = 0;
 
-  void unloadCameras() {
+  void _unload_cameras() {
     stop();
 
     for (auto cam : cameras) {
@@ -112,7 +112,7 @@ protected:
 
     if (errorOccurred) {
       cwipc_orbbec_log_warning("Not all cameras could be started");
-      unloadCameras();
+      _unload_cameras();
 
       return;
     }
@@ -150,16 +150,16 @@ public:
 
   virtual ~OrbbecBaseCapture() {
     uint64_t stopTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    unloadCameras();
+    _unload_cameras();
   }
 
-  virtual bool configReload(const char* filename) = 0;
+  virtual bool config_reload(const char* filename) = 0;
   virtual bool seek(uint64_t timestamp) = 0;
 
-  virtual bool captureAllCameras() = 0;
-  virtual uint64_t getBestTimestamp() = 0;
+  virtual bool _capture_all_cameras() = 0;
+  virtual uint64_t _get_best_timestamp() = 0;
 
-  virtual OrbbecCameraConfig* getCameraConfig(std::string serial) final {
+  virtual OrbbecCameraConfig* get_camera_config(std::string serial) final {
     for (int i = 0; i < configuration.all_camera_configs.size(); i++) {
       if (configuration.all_camera_configs[i].serial == serial) {
         return &configuration.all_camera_configs[i];
@@ -172,12 +172,12 @@ public:
 
   virtual void stop() final {
     stopped = true;
-    mergedPointcloudIsFresh = true;
-    mergedPointcloudWantNew = false;
+    mergedPC_is_fresh = true;
+    mergedPC_want_new = false;
 
-    mergedPointcloudIsFreshCV.notify_all();
+    mergedPC_is_fresh_cv.notify_all();
 
-    mergedPointcloudWantNew = true;
+    mergedPC_want_new = true;
     mergedPointcloudWantNewCV.notify_all();
 
     if (controlThread && controlThread->joinable()) {
@@ -191,11 +191,11 @@ public:
       cam->stop();
     }
 
-    mergedPointcloudIsFresh = false;
-    mergedPointcloudWantNew = false;
+    mergedPC_is_fresh = false;
+    mergedPC_want_new = false;
   }
 
-  virtual cwipc* getPointcloud() final {
+  virtual cwipc* get_pointcloud() final {
     if (cameraCount == 0) {
       return 0;
     }
@@ -204,7 +204,7 @@ public:
     return 0;
   }
 
-  virtual bool pointcouldAvailable(bool wait) final {
+  virtual bool pointcloud_available(bool wait) final {
     if (cameraCount == 0) {
       return false;
     }

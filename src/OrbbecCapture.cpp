@@ -33,7 +33,7 @@ bool OrbbecCapture::applyDefaultConfig() {
   }
 
   if (hasFailed) {
-    unloadCameras();
+    _unload_cameras();
     return false;
   }
 
@@ -46,7 +46,7 @@ bool OrbbecCapture::openCameras() {
 
   for (int i = 0; i < deviceList->deviceCount(); i++) {
     const char* serialNum = deviceList->serialNumber(i);
-    OrbbecCameraConfig* config = getCameraConfig(serialNum);
+    OrbbecCameraConfig* config = get_camera_config(serialNum);
 
     if (config == 0) {
       cwipc_orbbec_log_warning(std::string("Camera ") + serialNum + " not found in configuration");
@@ -136,8 +136,8 @@ bool OrbbecCapture::createCameras() {
   return true;
 }
 
-bool OrbbecCapture::configReload(const char* configFilename) {
-  unloadCameras();
+bool OrbbecCapture::config_reload(const char* configFilename) {
+  _unload_cameras();
 
   if (countDevices() == 0) {
     return false;
@@ -159,7 +159,7 @@ bool OrbbecCapture::configReload(const char* configFilename) {
   }
 
   if (!createCameras()) {
-    unloadCameras();
+    _unload_cameras();
     return false;
   }
 
@@ -173,7 +173,7 @@ bool OrbbecCapture::configReload(const char* configFilename) {
   return false;
 }
 
-bool OrbbecCapture::captureAllCameras() {
+bool OrbbecCapture::_capture_all_cameras() {
   bool capturesOk = true;
 
   for (auto cam : cameras) {
@@ -185,7 +185,7 @@ bool OrbbecCapture::captureAllCameras() {
   return capturesOk;
 }
 
-uint64_t OrbbecCapture::getBestTimestamp() {
+uint64_t OrbbecCapture::_get_best_timestamp() {
   uint64_t timestamp = 0;
 
   for (auto cam : cameras) {

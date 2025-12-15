@@ -17,8 +17,8 @@ class OrbbecCapture : public OrbbecBaseCapture<OrbbecCamera> {
 protected:
   OrbbecCapture();
 
-  bool captureAllCameras() override;
-  uint64_t getBestTimestamp() override;
+  bool _capture_all_cameras() override;
+  uint64_t _get_best_timestamp() override;
 
 public:
   static int countDevices();
@@ -30,6 +30,6 @@ public:
   virtual ~OrbbecCapture() {
   }
 
-  virtual bool configReload(const char* configFilename) override;
+  virtual bool config_reload(const char* configFilename) override;
   bool seek(uint64_t timestamp) override;
 };
