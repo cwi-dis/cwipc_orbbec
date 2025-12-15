@@ -10,8 +10,8 @@ class OrbbecCamera : public OrbbecBaseCamera<ob::Device> {
   OrbbecCamera& operator=(const OrbbecCamera&);
 
 protected:
-  virtual void startCaptureThread() override;
-  virtual void captureThreadFunction() override;
+  virtual void _start_capture_thread() override;
+  virtual void _capture_thread_main() override;
 
 public:
   OrbbecCamera(ApiCameraType* camera, OrbbecCaptureConfig& config, int cameraIndex, OrbbecCameraConfig& cameraConfig);
@@ -21,6 +21,6 @@ public:
 
   bool start() override;
   void stop() override;
-  virtual void startCapturer() override;
-  bool captureFrameset();
+  virtual void start_capturer() override;
+  bool capture_frameset();
 };

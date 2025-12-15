@@ -29,8 +29,8 @@ protected:
   moodycamel::BlockingReaderWriterQueue<ob::Frame> capturedFrameQueue;
   moodycamel::BlockingReaderWriterQueue<ob::Frame> processingFrameQueue;
 
-  virtual void startCaptureThread() = 0;
-  virtual void captureThreadFunction() = 0;
+  virtual void _start_capture_thread() = 0;
+  virtual void _capture_thread_main() = 0;
 
 public:
   std::string serial;
@@ -55,7 +55,7 @@ public:
   }
 
   virtual bool start() = 0;
-  virtual void startCapturer() = 0;
+  virtual void start_capturer() = 0;
   virtual void stop() = 0;
 
   virtual bool isSyncMaster() {

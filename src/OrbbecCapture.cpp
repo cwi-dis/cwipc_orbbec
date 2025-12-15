@@ -11,7 +11,7 @@ int OrbbecCapture::countDevices() {
   return deviceList->deviceCount();
 }
 
-bool OrbbecCapture::applyDefaultConfig() {
+bool OrbbecCapture::_apply_default_config() {
   bool hasFailed = false;
 
   ob::Context context;
@@ -143,7 +143,7 @@ bool OrbbecCapture::config_reload(const char* configFilename) {
     return false;
   }
 
-  if (!applyConfig(configFilename)) {
+  if (!apply_config(configFilename)) {
     cameraCount = 0;
     return false;
   }
@@ -163,11 +163,11 @@ bool OrbbecCapture::config_reload(const char* configFilename) {
     return false;
   }
 
-  initCameraPositions();
-  startCameras();
+  _init_camera_positions();
+  _start_cameras();
 
   stopped = false;
-  controlThread = new std::thread(&OrbbecCapture::controlThreadFunction, this);
+  controlThread = new std::thread(&OrbbecCapture::_control_thread_main, this);
   cwipc_setThreadName(controlThread, L"cwipc_orbbec::controlThread");
 
   return false;
@@ -177,7 +177,7 @@ bool OrbbecCapture::_capture_all_cameras() {
   bool capturesOk = true;
 
   for (auto cam : cameras) {
-    if (!cam->captureFrameset()) {
+    if (!cam->capture_frameset()) {
       capturesOk = false;
     }
   }
