@@ -94,7 +94,10 @@ cwipc_tiledsource* cwipc_orbbec(const char *configFilename, char **errorMessage,
 
         return NULL;
     }
-
+    if (errorMessage) {
+        static char *tmp = (char *)"cwipc_orbbec() not yet implemented";
+        *errorMessage = tmp;
+    }
     return NULL;
 }
 
@@ -107,6 +110,10 @@ cwipc_tiledsource* cwipc_orbbec_offline(const char* configFilename, char** error
         }
 
         return NULL;
+    }
+    if (errorMessage) {
+        static char *tmp = (char *)"cwipc_orbbec_offline() not yet implemented";
+        *errorMessage = tmp;
     }
 
     return NULL;
