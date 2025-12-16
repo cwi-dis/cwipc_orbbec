@@ -9,26 +9,39 @@ OrbbecCamera::OrbbecCamera(ApiCameraType* camera, OrbbecCaptureConfig& config, i
 
 bool OrbbecCamera::start() {
   // XXX IMPLEMENT ME
+  assert(0);
   return false;
 }
 
 void OrbbecCamera::stop() {
   // XXX IMPLEMENT ME
+  assert(0);
 }
 
 void OrbbecCamera::start_capturer() {
   // XXX IMPLEMENT ME
+  camera_pipeline.start();
+  _start_capture_thread();
 }
 
 bool OrbbecCamera::capture_frameset() {
   // XXX IMPLEMENT ME
-  return false;
+  current_frameset = camera_pipeline.waitForFrameset();
+  return true;
 }
 
 void OrbbecCamera::_start_capture_thread() {
   // XXX IMPLEMENT ME
+  assert(!camera_started);
+  assert(camera_stopped);
+  capture_thread = new std::thread(&OrbbecCamera::_capture_thread_main, this);
+  // xxxjack _cwipc_setThreadName(capture_thread, L"cwipc_orbbec::OrbecCamera::capture_thread");
 }
 
 void OrbbecCamera::_capture_thread_main() {
   // XXX IMPLEMENT ME
+  camera_started = true;
+  while(!camera_stopped) {
+    bool ok = capture_frameset();
+  }
 }

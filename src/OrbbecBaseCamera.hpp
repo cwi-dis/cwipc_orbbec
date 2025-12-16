@@ -4,27 +4,30 @@
 #include <cwipc_util/internal.h>
 
 #include "libobsensor/hpp/Frame.hpp"
+#include "libobsensor/hpp/Pipeline.hpp"
 #include "readerwriterqueue.h"
 
 #include "OrbbecConfig.hpp"
 typedef void *xxxjack_dont_know_yet;
 template<typename ApiCameraType> class OrbbecBaseCamera : public CwipcBaseCamera {
 protected:
+  std::thread *capture_thread;
   std::string CLASSNAME;
   OrbbecCaptureConfig& configuration;
   ApiCameraType* camera_handle;
   bool stopped = true;
   bool camera_started = false;
+  bool camera_stopped = true;
 
   OrbbecCameraConfig& camera_configuration;
 
   bool processing_done = false;
 
   cwipc_pcl_pointcloud current_pointcloud = nullptr;  //<! Most recent grabbed pointcloud
-
-  moodycamel::BlockingReaderWriterQueue<ob::Frame> captured_frame_queue;
-  moodycamel::BlockingReaderWriterQueue<ob::Frame> processing_frame_queue;
-  ob::Frame current_frameset;
+  ob::Pipeline camera_pipeline;
+  moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;
+  moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> processing_frame_queue;
+  std::shared_ptr<ob::FrameSet> current_frameset;
   bool camera_sync_is_master;
   bool camera_sync_is_used;
   bool do_height_filtering;
@@ -69,7 +72,7 @@ public:
   }
 
   virtual void create_pc_from_frames() final {
-    assert(current_frameset);
+    assert(current_frameset && current_frameset.getImpl());
 
     if (!processing_frame_queue.try_enqueue(current_frameset)) {
         std::cerr << CLASSNAME << ":  camera " << serial << ": drop frame before processing" << std::endl;
