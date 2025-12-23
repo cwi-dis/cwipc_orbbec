@@ -213,7 +213,7 @@ protected:
     }
 
     if (strcmp(configFilename, "auto") == 0) {
-      return _apply_default_config();
+      return _apply_auto_config();
     }
 
     if (configFilename[0] == '{') {
@@ -227,7 +227,7 @@ protected:
 
     return false;
   }
-  virtual bool _apply_default_config() = 0;
+  virtual bool _apply_auto_config() = 0;
 
   virtual void _init_camera_positions() final {
     for (auto &config : configuration.all_camera_configs) {

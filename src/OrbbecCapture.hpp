@@ -9,7 +9,7 @@ class OrbbecCapture : public OrbbecBaseCapture<ob::Device, OrbbecCamera> {
   typedef ob::Device Type_api_camera;
   typedef OrbbecCamera Type_our_camera;
 
-  virtual bool _apply_default_config() override;
+  virtual bool _apply_auto_config() override;
   bool initializeHardwareSettings();
   bool createCameras();
   bool openCameras();

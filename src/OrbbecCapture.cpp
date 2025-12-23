@@ -12,7 +12,7 @@ int OrbbecCapture::countDevices() {
   return deviceList->deviceCount();
 }
 
-bool OrbbecCapture::_apply_default_config() {
+bool OrbbecCapture::_apply_auto_config() {
   bool hasFailed = false;
 
   ob::Context context;

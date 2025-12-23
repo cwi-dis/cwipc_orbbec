@@ -30,8 +30,6 @@ static bool _api_versioncheck(char **errorMessage, uint64_t apiVersion) {
 
 template<class GrabberClass, class CameraConfigClass=OrbbecCameraConfig>
 class cwipc_source_orbbec_impl_base : public cwipc_capturer_impl_base<GrabberClass, CameraConfigClass> {
-protected:
-    OrbbecCapture *grabber;
 
 public:
     using cwipc_capturer_impl_base<GrabberClass, CameraConfigClass>::cwipc_capturer_impl_base;
