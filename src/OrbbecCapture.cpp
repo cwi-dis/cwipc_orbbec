@@ -49,8 +49,8 @@ bool OrbbecCapture::openCameras() {
     OrbbecCameraConfig* config = get_camera_config(serialNum);
 
     if (config == 0) {
-      cwipc_orbbec_log_warning(std::string("Camera ") + serialNum + " not found in configuration");
-      continue;
+      _log_error(std::string("Camera ") + serialNum + " not found in configuration");
+      return false;
     }
 
     if (config->disabled) {
@@ -124,12 +124,12 @@ bool OrbbecCapture::createCameras() {
     ob::Device* device = config.handle.get();
 
     if (config.type != type) {
-      cwipc_orbbec_log_warning(std::string("Camera ") + config.serial + " is not a " + type + " camera");
-      continue;
+      _log_error(std::string("Camera ") + config.serial + " is not a " + type + " camera");
+      return false;
     }
 
     int cameraIndex = cameras.size();
-    auto camera = new CameraType(device, configuration, cameraIndex, config);
+    auto camera = new Type_our_camera(device, configuration, cameraIndex, config);
     cameras.push_back(camera);
   }
 
@@ -144,17 +144,17 @@ bool OrbbecCapture::config_reload(const char* configFilename) {
   }
 
   if (!apply_config(configFilename)) {
-    cameraCount = 0;
+    camera_count = 0;
     return false;
   }
 
   if (!openCameras()) {
-    cameraCount = 0;
+    camera_count = 0;
     return false;
   }
 
   if (!initializeHardwareSettings()) {
-    cameraCount = 0;
+    camera_count = 0;
     return false;
   }
 
@@ -167,8 +167,8 @@ bool OrbbecCapture::config_reload(const char* configFilename) {
   _start_cameras();
 
   stopped = false;
-  controlThread = new std::thread(&OrbbecCapture::_control_thread_main, this);
-  cwipc_setThreadName(controlThread, L"cwipc_orbbec::controlThread");
+  control_thread = new std::thread(&OrbbecCapture::_control_thread_main, this);
+  cwipc_setThreadName(control_thread, L"cwipc_orbbec::control_thread");
 
   return false;
 }

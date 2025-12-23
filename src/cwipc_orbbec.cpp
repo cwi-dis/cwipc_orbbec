@@ -7,83 +7,58 @@
 
 #include "cwipc_util/api_pcl.h"
 #include "cwipc_util/api.h"
-#include "cwipc_util/internal.h"
+#include "cwipc_util/capturers.hpp"
 #include "cwipc_orbbec/api.h"
 
+#include "OrbbecConfig.hpp"
 #include "OrbbecCapture.hpp"
+#include "OrbbecCamera.hpp"
 
-class cwipc_source_orbbec_impl : public cwipc_tiledsource {
+
+static bool _api_versioncheck(char **errorMessage, uint64_t apiVersion) {
+    if (apiVersion < CWIPC_API_VERSION_OLD || apiVersion > CWIPC_API_VERSION) {
+        char* msgbuf = (char*)malloc(1024);
+        snprintf(msgbuf, 1024, "cwipc_orbbec: incorrect apiVersion 0x%08" PRIx64 " expected 0x%08" PRIx64 "..0x%08" PRIx64 "", apiVersion, CWIPC_API_VERSION_OLD, CWIPC_API_VERSION);
+        if (errorMessage) {
+            *errorMessage = msgbuf;
+        }
+        cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", msgbuf + 18);
+        return false;
+    }
+    return true;
+}
+
+template<class GrabberClass, class CameraConfigClass=OrbbecCameraConfig>
+class cwipc_source_orbbec_impl_base : public cwipc_capturer_impl_base<GrabberClass, CameraConfigClass> {
 protected:
     OrbbecCapture *grabber;
 
-    cwipc_source_orbbec_impl(OrbbecCapture *obj) : grabber(obj) {
-    }
-
 public:
-    cwipc_source_orbbec_impl(const char *configFilename=NULL) : grabber(OrbbecCapture::factory()) {
-        grabber->config_reload(configFilename);
+    using cwipc_capturer_impl_base<GrabberClass, CameraConfigClass>::cwipc_capturer_impl_base;
+
+    virtual void request_auxiliary_data(const std::string &name) override {
+        cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", "request_auxiliary_data not implemented");
     }
 
-    ~cwipc_source_orbbec_impl() {
-        free();
+    virtual bool auxiliary_operation(const std::string op, const void* inbuf, size_t insize, void* outbuf, size_t outsize) override {
+        cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", "auxiliary_operation not implemented");
+        return false;
     }
-
-    bool is_valid() {
-        return true;
-    }
-
-    void free() {
-        delete grabber;
-        grabber = 0;
-    }
-
-    bool eof() {
-        return grabber->eof;
-    }
-
-    bool available(bool wait) {
-        if (grabber == 0) {
-            return false;
-        }
-
-        return grabber->pointcloud_available(wait);
-    }
-
-    cwipc* get() {
-        if (grabber == 0) {
-            return 0;
-        }
-
-        return grabber->get_pointcloud();
-    }
-
-    int maxtile() {
-        if (grabber == 0) {
-            return 0;
-        }
-
-        int n = grabber->configuration.all_camera_configs.size();
-
-        if (n <= 1) {
-            return n;
-        }
-
-        return 1 << n;
-    }
-
-    bool get_tileinfo(int tilenum, struct cwipc_tileinfo* tileinfo) {
+    
+    virtual bool seek(uint64_t timestamp) override {
         return false;
     }
 };
 
-class cwipc_source_orbbec_playback_impl : public cwipc_tiledsource {
-protected:
+class cwipc_source_orbbec_impl : public cwipc_source_orbbec_impl_base<OrbbecCapture> {
 public:
-    cwipc_source_orbbec_playback_impl(const char* configFilename = NULL) {
-    }
+    using cwipc_source_orbbec_impl_base<OrbbecCapture>::cwipc_source_orbbec_impl_base;
 
-    ~cwipc_source_orbbec_playback_impl() {
-    }
+};
+class cwipc_source_orbbec_playback_impl : public cwipc_source_orbbec_impl_base<OrbbecCapture> {
+public:
+    using cwipc_source_orbbec_impl_base<OrbbecCapture>::cwipc_source_orbbec_impl_base;
+
 };
 
 //
@@ -91,13 +66,7 @@ public:
 //
 
 cwipc_tiledsource* cwipc_orbbec(const char *configFilename, char **errorMessage, uint64_t apiVersion) {
-    if (apiVersion < CWIPC_API_VERSION_OLD || apiVersion > CWIPC_API_VERSION) {
-        if (errorMessage) {
-            char* msgbuf = (char*)malloc(1024);
-            snprintf(msgbuf, 1024, "cwipc_kinect: incorrect apiVersion 0x%08" PRIx64 " expected 0x%08" PRIx64 "..0x%08" PRIx64 "", apiVersion, CWIPC_API_VERSION_OLD, CWIPC_API_VERSION);
-            *errorMessage = msgbuf;
-        }
-
+    if (!_api_versioncheck(errorMessage, apiVersion)) {
         return NULL;
     }
     cwipc_source_orbbec_impl *rv = new cwipc_source_orbbec_impl(configFilename);
@@ -113,16 +82,17 @@ cwipc_tiledsource* cwipc_orbbec(const char *configFilename, char **errorMessage,
 }
 
 cwipc_tiledsource* cwipc_orbbec_playback(const char* configFilename, char** errorMessage, uint64_t apiVersion) {
-    if (apiVersion < CWIPC_API_VERSION_OLD || apiVersion > CWIPC_API_VERSION) {
-        if (errorMessage) {
-            char* msgbuf = (char*)malloc(1024);
-            snprintf(msgbuf, 1024, "cwipc_k4aoffline: incorrect apiVersion 0x%08" PRIx64 " expected 0x%08" PRIx64 "..0x%08" PRIx64 "", apiVersion, CWIPC_API_VERSION_OLD, CWIPC_API_VERSION);
-            *errorMessage = msgbuf;
-        }
 
+    if (!_api_versioncheck(errorMessage, apiVersion)) {
         return NULL;
     }
+    cwipc_source_orbbec_playback_impl* rv = new cwipc_source_orbbec_playback_impl(configFilename);
+    if (rv && rv->is_valid()) {
+        return rv;
+    }
+    delete rv;
 
+    cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec_playback", "unspecified error from playback constructor");
     if (errorMessage) {
         char *tmp = (char *)"cwipc_orbbec_playback: unspecified error";
         *errorMessage = tmp;
@@ -135,4 +105,4 @@ cwipc_tiledsource* cwipc_orbbec_playback(const char* configFilename, char** erro
 // These static variables only exist to ensure the initializer is called, which registers our camera type.
 //
 int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::countDevices, cwipc_orbbec);
-int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_offline", nullptr, cwipc_orbbec_playback);
+int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_playback", nullptr, cwipc_orbbec_playback);

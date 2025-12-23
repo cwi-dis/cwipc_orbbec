@@ -1,7 +1,7 @@
 #include "OrbbecCamera.hpp"
 #include "OrbbecConfig.hpp"
 
-OrbbecCamera::OrbbecCamera(ApiCameraType* camera, OrbbecCaptureConfig& config, int cameraIndex, OrbbecCameraConfig& cameraConfig) : OrbbecBaseCamera("cwipc_orbbec: OrbbecCamera", camera, config, cameraIndex, cameraConfig) {
+OrbbecCamera::OrbbecCamera(Type_api_camera* camera, OrbbecCaptureConfig& config, int cameraIndex, OrbbecCameraConfig& cameraConfig) : OrbbecBaseCamera("cwipc_orbbec: OrbbecCamera", camera, config, cameraIndex, cameraConfig) {
   if (config.record_to_directory != "") {
     record_to_file = config.record_to_directory + "/" + cameraConfig.serial + ".mkv";
   }

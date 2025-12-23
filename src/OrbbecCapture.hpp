@@ -5,9 +5,9 @@
 #include "OrbbecBaseCapture.hpp"
 #include "OrbbecCamera.hpp"
 
-class OrbbecCapture : public OrbbecBaseCapture<OrbbecCamera> {
-  typedef ob::Device ApiCameraType;
-  typedef OrbbecCamera CameraType;
+class OrbbecCapture : public OrbbecBaseCapture<ob::Device, OrbbecCamera> {
+  typedef ob::Device Type_api_camera;
+  typedef OrbbecCamera Type_our_camera;
 
   virtual bool _apply_default_config() override;
   bool initializeHardwareSettings();

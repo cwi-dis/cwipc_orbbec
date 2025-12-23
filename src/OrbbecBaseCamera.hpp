@@ -1,20 +1,20 @@
 #pragma once
 
 #include <string>
-#include <cwipc_util/internal.h>
 
 #include "libobsensor/hpp/Frame.hpp"
 #include "libobsensor/hpp/Pipeline.hpp"
 #include "readerwriterqueue.h"
 
+#include "cwipc_util/capturers.hpp"
 #include "OrbbecConfig.hpp"
 typedef void *xxxjack_dont_know_yet;
-template<typename ApiCameraType> class OrbbecBaseCamera : public CwipcBaseCamera {
+template<typename Type_api_camera> class OrbbecBaseCamera : public CwipcBaseCamera {
 protected:
   std::thread *capture_thread;
   std::string CLASSNAME;
   OrbbecCaptureConfig& configuration;
-  ApiCameraType* camera_handle;
+  Type_api_camera* camera_handle;
   bool stopped = true;
   bool camera_started = false;
   bool camera_stopped = true;
@@ -45,7 +45,7 @@ public:
   bool eof = false;
   int camera_index;
 
-  OrbbecBaseCamera(const std::string& _Classname, ApiCameraType* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration) :
+  OrbbecBaseCamera(const std::string& _Classname, Type_api_camera* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration) :
     CLASSNAME(_Classname),
     camera_handle(_handle),
     configuration(_configuration),

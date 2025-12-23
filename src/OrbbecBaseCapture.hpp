@@ -4,30 +4,35 @@
 #include <thread>
 #include <condition_variable>
 #include <pcl/common/transforms.h>
-#include <cwipc_util/internal.h>
 
+#include "cwipc_util/capturers.hpp"
 #include "OrbbecConfig.hpp"
 
-template<class CameraType> class OrbbecBaseCapture : public CwipcBaseCapture {
+template<class Type_api_camera, class Type_our_camera> class OrbbecBaseCapture : public CwipcBaseCapture {
+public:
+    using CwipcBaseCapture::CwipcBaseCapture;
+
+
+  virtual ~OrbbecBaseCapture() {
+      uint64_t stopTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      _unload_cameras();
+  }
+
+    virtual int get_camera_count() override final { 
+        return camera_count; 
+    }
+
+    virtual bool is_valid() override final { 
+        return camera_count > 0; 
+    }
+      
+    virtual bool config_reload(const char* filename) = 0;
+
+    virtual std::string config_get() {
+        return configuration.to_string();
+    }
+
 protected:
-  std::string CLASSNAME;
-  std::vector<CameraType*> cameras;
-
-  bool stopped = false;
-
-  uint64_t startTime = 0;
-  int numberOfPointCloudsProduced = 0;
-
-  cwipc* mergedPC;
-  std::mutex mergedPC_mutex;
-
-  bool mergedPC_is_fresh = false;
-  std::condition_variable mergedPC_is_fresh_cv;
-
-  bool mergedPC_want_new = false;
-  std::condition_variable mergedPC_want_new_cv;
-
-  std::thread* controlThread = 0;
 
   void _unload_cameras() {
     stop();
@@ -37,7 +42,7 @@ protected:
     }
 
     cameras.clear();
-    cameraCount = 0;
+    camera_count = 0;
   }
 
   virtual bool _apply_default_config() = 0;
@@ -111,13 +116,13 @@ protected:
     }
 
     if (errorOccurred) {
-      cwipc_orbbec_log_warning("Not all cameras could be started");
+      _log_error("Not all cameras could be started");
       _unload_cameras();
 
       return;
     }
 
-    startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    starttime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     for (auto cam : cameras) {
       if (cam->isSyncMaster()) {
@@ -145,8 +150,8 @@ protected:
       }
       //check EOF:
       for (auto cam : cameras) {
-          if (cam->eof) {
-              eof = true;
+          if (cam->_eof) {
+              _eof = true;
               stopped = true;
               break;
           }
@@ -279,7 +284,7 @@ protected:
         for (auto cam : cameras) {
             cwipc_pcl_pointcloud cam_cld = cam->get_current_pointcloud();
             if (cam_cld == nullptr) {
-                cwipc_orbbec_log_warning("Camera " + cam->serial + " returned NULL cloud, ignoring");
+                _log_warning("Camera " + cam->serial + " returned NULL cloud, ignoring");
                 continue;
             }
 
@@ -300,23 +305,33 @@ protected:
         }
 
         if (aligned_cld->size() != nPoints) {
-            cwipc_orbbec_log_warning("Combined pointcloud has different number of points than expected");
+            _log_error("Combined pointcloud has different number of points than expected");
         }
     }
 public:
   OrbbecCaptureConfig configuration;
-  int cameraCount = 0;
-  bool eof = false;
+protected:
+  std::vector<Type_our_camera*> cameras;
 
-  OrbbecBaseCapture(const std::string& classname) : CLASSNAME(classname) {
-  }
+  int camera_count = 0;
+  bool stopped = false;
+  bool _eof = false;
 
-  virtual ~OrbbecBaseCapture() {
-    uint64_t stopTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    _unload_cameras();
-  }
+  uint64_t starttime = 0;
+  int numberOfPCsProduced = 0;
 
-  virtual bool config_reload(const char* filename) = 0;
+  cwipc* mergedPC;
+  std::mutex mergedPC_mutex;
+
+  bool mergedPC_is_fresh = false;
+  std::condition_variable mergedPC_is_fresh_cv;
+
+  bool mergedPC_want_new = false;
+  std::condition_variable mergedPC_want_new_cv;
+
+  std::thread* control_thread = 0;
+
+
   virtual bool seek(uint64_t timestamp) = 0;
 
   virtual bool _capture_all_cameras() = 0;
@@ -329,7 +344,7 @@ public:
       }
     }
 
-    cwipc_orbbec_log_warning("Unknown camera " + serial);
+    _log_error("Unknown camera " + serial);
     return 0;
   }
 
@@ -343,12 +358,12 @@ public:
     mergedPC_want_new = true;
     mergedPC_want_new_cv.notify_all();
 
-    if (controlThread && controlThread->joinable()) {
-      controlThread->join();
+    if (control_thread && control_thread->joinable()) {
+      control_thread->join();
     }
 
-    delete controlThread;
-    controlThread = 0;
+    delete control_thread;
+    control_thread = 0;
 
     for (auto cam : cameras) {
       cam->stop();
@@ -359,7 +374,7 @@ public:
   }
 
   virtual cwipc* get_pointcloud() final {
-    if (cameraCount == 0) {
+    if (camera_count == 0) {
       return 0;
     }
 
@@ -368,7 +383,7 @@ public:
   }
 
   virtual bool pointcloud_available(bool wait) final {
-    if (cameraCount == 0) {
+    if (camera_count == 0) {
       return false;
     }
 
