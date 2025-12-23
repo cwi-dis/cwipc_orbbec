@@ -21,6 +21,7 @@ bool OrbbecCapture::_apply_default_config() {
   for (int i = 0; i < deviceList->deviceCount(); i++) {
     OrbbecCameraConfig config;
 
+    config.type = "orbbec";
     config.serial = deviceList->serialNumber(i);
 
     pcl::shared_ptr<Eigen::Affine3d> default_trafo(new Eigen::Affine3d());
