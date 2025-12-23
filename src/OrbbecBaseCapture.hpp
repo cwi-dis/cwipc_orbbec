@@ -26,7 +26,7 @@ public:
         return camera_count > 0; 
     }
       
-    virtual bool config_reload(const char* filename) override = 0;
+    virtual bool config_reload_and_start_capturing(const char* filename) override = 0;
 
     virtual std::string config_get() override {
         return configuration.to_string();
@@ -188,7 +188,7 @@ public:
     control_thread = 0;
 
     for (auto cam : cameras) {
-      cam->stop();
+      cam->stop_camera();
     }
 
     mergedPC_is_fresh = false;
@@ -254,29 +254,39 @@ protected:
   }
 
   virtual void _start_cameras() final {
-    bool errorOccurred = false;
-
+    bool start_error = false;
+    for (auto cam: cameras) {
+        if (!cam->pre_start_all_cameras()) {
+            start_error = true;
+        }
+    }
+    // xxxjack Check for Orbbec. K4A wants master camera started _last_, because then
+    // any recordings will be automatically starting at the same frame. Need to check
+    // that this is also true for Orbbec.
     for (auto cam : cameras) {
-      if (cam->isSyncMaster()) {
+      if (cam->is_sync_master()) {
         continue;
       }
 
-      if (!cam->start()) {
-        errorOccurred = true;
+      if (!cam->start_camera()) {
+        start_error = true;
       }
     }
 
     for (auto cam : cameras) {
-      if (!cam->isSyncMaster()) {
+      if (!cam->is_sync_master()) {
         continue;
       }
 
-      if (!cam->start()) {
-        errorOccurred = true;
+      if (!cam->start_camera()) {
+        start_error = true;
       }
     }
+    for (auto cam : cameras) {
+      cam->post_start_all_cameras();
+    }
 
-    if (errorOccurred) {
+    if (start_error) {
       _log_error("Not all cameras could be started");
       _unload_cameras();
 
@@ -286,19 +296,19 @@ protected:
     starttime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     for (auto cam : cameras) {
-      if (cam->isSyncMaster()) {
+      if (cam->is_sync_master()) {
         continue;
       }
 
-      cam->start_capturer();
+      cam->start_camera_streaming();
     }
 
     for (auto cam : cameras) {
-      if (!cam->isSyncMaster()) {
+      if (!cam->is_sync_master()) {
         continue;
       }
 
-      cam->start_capturer();
+      cam->start_camera_streaming();
     }
   }
 

@@ -12,6 +12,10 @@ typedef void *xxxjack_dont_know_yet;
 template<typename Type_api_camera> class OrbbecBaseCamera : public CwipcBaseCamera {
 public:
   float pointSize = 0;
+  std::string serial;
+  bool _eof = false;
+  int camera_index;
+
 protected:
   std::thread *grabber_thread;
   OrbbecCaptureConfig& configuration;
@@ -42,10 +46,6 @@ protected:
   virtual void _capture_thread_main() = 0;
 
 public:
-  std::string serial;
-  bool _eof = false;
-  int camera_index;
-
   OrbbecBaseCamera(const std::string& _Classname, Type_api_camera* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration)
   : CwipcBaseCamera(_Classname + ": " + _camera_configuration.serial, "orbbec"),
     camera_handle(_handle),
@@ -66,11 +66,19 @@ public:
     // xxxjack implement proper stopping and cleanup
   }
 
-  virtual bool start() = 0;
-  virtual void start_capturer() = 0;
-  virtual void stop() = 0;
+      /// Step 1 in starting: tell the camera we are going to start. Called for all cameras.
+    virtual bool pre_start_all_cameras() final { return true; }
+    /// Step 2 in starting: starts the camera. Called for all cameras. 
+    virtual bool start_camera() = 0;
+    /// Step 3 in starting: starts the capturer. Called after all cameras have been started.
+    virtual void start_camera_streaming() = 0;
+    /// Step 4, called after all capturers have been started.
+    virtual void post_start_all_cameras() final {}
+    virtual void pre_stop_camera() final {}
+    virtual void stop_camera() = 0;
 
-  virtual bool isSyncMaster() {
+
+  virtual bool is_sync_master() final {
     return camera_sync_is_master;
   }
 

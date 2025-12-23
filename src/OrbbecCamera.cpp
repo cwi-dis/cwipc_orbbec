@@ -7,18 +7,18 @@ OrbbecCamera::OrbbecCamera(Type_api_camera* camera, OrbbecCaptureConfig& config,
   }
 }
 
-bool OrbbecCamera::start() {
+bool OrbbecCamera::start_camera() {
   // XXX IMPLEMENT ME
   assert(0);
   return false;
 }
 
-void OrbbecCamera::stop() {
+void OrbbecCamera::stop_camera() {
   // XXX IMPLEMENT ME
   assert(0);
 }
 
-void OrbbecCamera::start_capturer() {
+void OrbbecCamera::start_camera_streaming() {
   // XXX IMPLEMENT ME
   camera_pipeline.start();
   _start_capture_thread();

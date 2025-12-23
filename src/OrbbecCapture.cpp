@@ -137,7 +137,7 @@ bool OrbbecCapture::createCameras() {
   return true;
 }
 
-bool OrbbecCapture::config_reload(const char* configFilename) {
+bool OrbbecCapture::config_reload_and_start_capturing(const char* configFilename) {
   _unload_cameras();
 
   if (countDevices() == 0) {

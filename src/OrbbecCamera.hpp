@@ -19,8 +19,8 @@ public:
   virtual ~OrbbecCamera() {
   }
 
-  bool start() override;
-  void stop() override;
-  virtual void start_capturer() override;
+  bool start_camera() override;
+  void stop_camera() override;
+  virtual void start_camera_streaming() override;
   bool capture_frameset();
 };
