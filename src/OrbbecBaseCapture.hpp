@@ -26,13 +26,138 @@ public:
         return camera_count > 0; 
     }
       
-    virtual bool config_reload(const char* filename) = 0;
+    virtual bool config_reload(const char* filename) override = 0;
 
-    virtual std::string config_get() {
+    virtual std::string config_get() override {
         return configuration.to_string();
     }
 
+    virtual bool pointcloud_available(bool wait) override final {
+        if (camera_count == 0) {
+            return false;
+        }
+#ifdef xxxjack_implement_me
+        _request_new_pointcloud();
+        std::this_thread::yield();
+        std::unique_lock<std::mutex> mylock(mergedPC_mutex);
+        auto duration = std::chrono::seconds(wait ? 1 : 0);
+
+        mergedPC_is_fresh_cv.wait_for(mylock, duration, [this] {
+            return mergedPC_is_fresh;
+        });
+
+        return mergedPC_is_fresh;
+#else
+        // XXX IMPLEMENT ME
+        return false;
+#endif
+    }
+
+    virtual cwipc* get_pointcloud() override final {
+        if (camera_count == 0) {
+          _log_warning("get_pointcloud: returning NULL, no cameras");
+          return nullptr;
+        }
+#ifdef xxxjack_implement_me
+        _request_new_pointcloud();
+        // Wait for a fresh mergedPC to become available.
+        // Note we keep the return value while holding the lock, so we can start the next grab/process/merge cycle before returning.
+        cwipc* rv;
+
+        {
+            std::unique_lock<std::mutex> mylock(mergedPC_mutex);
+            mergedPC_is_fresh_cv.wait(mylock, [this] {
+                return mergedPC_is_fresh;
+            });
+
+            assert(mergedPC_is_fresh);
+            mergedPC_is_fresh = false;
+            numberOfPCsProduced++;
+            rv = mergedPC;
+            mergedPC = nullptr;
+
+            if (rv == nullptr) {
+              _log_warning("get_pointcloud: returning NULL, even though mergedPC_is_fresh");
+            }
+        }
+
+        _request_new_pointcloud();
+        return rv;
+#else
+        // XXX IMPLEMENT ME
+        return nullptr;
+#endif
+    }
+
+    virtual float get_pointSize() override final {
+        if (camera_count == 0) {
+            return 0;
+        }
+
+        float rv = 99999;
+
+        for (auto cam : cameras) {
+            if (cam->pointSize < rv) {
+                rv = cam->pointSize;
+            }
+        }
+
+        if (rv > 9999) {
+            rv = 0;
+        }
+
+        return rv;
+    }
+
+    virtual bool map2d3d(int tile, int x_2d, int y_2d, int d_2d, float* out3d) override final
+    {
+#ifdef xxxjack_notyet
+        for (auto cam : cameras) {
+            if (tile == (1 << cam->camera_index)) {
+                return cam->map2d3d(x_2d, y_2d, d_2d, out3d);
+            }
+        }
+#endif
+        return false;
+    }
+    virtual bool mapcolordepth(int tile, int u, int v, int* out2d) override final
+    {
+        // For Kinect the RGB and D images have the same coordinate system.
+        out2d[0] = u;
+        out2d[1] = v;
+        return true;
+    }
+
+    virtual bool seek(uint64_t timestamp) override = 0;
+
+    bool eof() override {
+        return _eof;
+    }
+
+public:
+  OrbbecCaptureConfig configuration;
 protected:
+  std::vector<Type_our_camera*> cameras;
+
+  int camera_count = 0;
+  bool stopped = false;
+  bool _eof = false;
+
+  uint64_t starttime = 0;
+  int numberOfPCsProduced = 0;
+
+  cwipc* mergedPC;
+  std::mutex mergedPC_mutex;
+
+  bool mergedPC_is_fresh = false;
+  std::condition_variable mergedPC_is_fresh_cv;
+
+  bool mergedPC_want_new = false;
+  std::condition_variable mergedPC_want_new_cv;
+
+  std::thread* control_thread = 0;
+
+public:
 
   void _unload_cameras() {
     stop();
@@ -45,7 +170,42 @@ protected:
     camera_count = 0;
   }
 
-  virtual bool _apply_default_config() = 0;
+  virtual void stop() final {
+    stopped = true;
+    mergedPC_is_fresh = true;
+    mergedPC_want_new = false;
+
+    mergedPC_is_fresh_cv.notify_all();
+
+    mergedPC_want_new = true;
+    mergedPC_want_new_cv.notify_all();
+
+    if (control_thread && control_thread->joinable()) {
+      control_thread->join();
+    }
+
+    delete control_thread;
+    control_thread = 0;
+
+    for (auto cam : cameras) {
+      cam->stop();
+    }
+
+    mergedPC_is_fresh = false;
+    mergedPC_want_new = false;
+  }
+
+  virtual OrbbecCameraConfig* get_camera_config(std::string serial) final {
+    for (int i = 0; i < configuration.all_camera_configs.size(); i++) {
+      if (configuration.all_camera_configs[i].serial == serial) {
+        return &configuration.all_camera_configs[i];
+      }
+    }
+
+    _log_error("Unknown camera " + serial);
+    return 0;
+  }
+protected:
 
   virtual bool apply_config(const char* configFilename) final {
     if (configFilename == 0 || *configFilename == '\0') {
@@ -57,16 +217,17 @@ protected:
     }
 
     if (configFilename[0] == '{') {
-      return cwipc_orbbec_jsonbuffer2config(configFilename, &configuration, type);
+      return configuration.from_string(configFilename, type);
     }
 
     const char* extension = strrchr(configFilename, '.');
     if (extension != 0 && strcmp(extension, ".json") == 0) {
-      return cwipc_orbbec_jsonfile2config(configFilename, &configuration, type);
+      return configuration.from_file(configFilename, type);
     }
 
     return false;
   }
+  virtual bool _apply_default_config() = 0;
 
   virtual void _init_camera_positions() final {
     for (auto &config : configuration.all_camera_configs) {
@@ -309,85 +470,10 @@ protected:
         }
     }
 public:
-  OrbbecCaptureConfig configuration;
-protected:
-  std::vector<Type_our_camera*> cameras;
-
-  int camera_count = 0;
-  bool stopped = false;
-  bool _eof = false;
-
-  uint64_t starttime = 0;
-  int numberOfPCsProduced = 0;
-
-  cwipc* mergedPC;
-  std::mutex mergedPC_mutex;
-
-  bool mergedPC_is_fresh = false;
-  std::condition_variable mergedPC_is_fresh_cv;
-
-  bool mergedPC_want_new = false;
-  std::condition_variable mergedPC_want_new_cv;
-
-  std::thread* control_thread = 0;
 
 
-  virtual bool seek(uint64_t timestamp) = 0;
 
   virtual bool _capture_all_cameras() = 0;
   virtual uint64_t _get_best_timestamp() = 0;
 
-  virtual OrbbecCameraConfig* get_camera_config(std::string serial) final {
-    for (int i = 0; i < configuration.all_camera_configs.size(); i++) {
-      if (configuration.all_camera_configs[i].serial == serial) {
-        return &configuration.all_camera_configs[i];
-      }
-    }
-
-    _log_error("Unknown camera " + serial);
-    return 0;
-  }
-
-  virtual void stop() final {
-    stopped = true;
-    mergedPC_is_fresh = true;
-    mergedPC_want_new = false;
-
-    mergedPC_is_fresh_cv.notify_all();
-
-    mergedPC_want_new = true;
-    mergedPC_want_new_cv.notify_all();
-
-    if (control_thread && control_thread->joinable()) {
-      control_thread->join();
-    }
-
-    delete control_thread;
-    control_thread = 0;
-
-    for (auto cam : cameras) {
-      cam->stop();
-    }
-
-    mergedPC_is_fresh = false;
-    mergedPC_want_new = false;
-  }
-
-  virtual cwipc* get_pointcloud() final {
-    if (camera_count == 0) {
-      return 0;
-    }
-
-    // XXX IMPLEMENT ME
-    return 0;
-  }
-
-  virtual bool pointcloud_available(bool wait) final {
-    if (camera_count == 0) {
-      return false;
-    }
-
-    // XXX IMPLEMENT ME
-    return false;
-  }
 };

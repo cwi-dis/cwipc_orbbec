@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-void OrbbecCaptureConfig::from_json(const json &json_data) {
+void OrbbecCaptureConfig::_from_json(const json &json_data) {
   CwipcBaseCaptureConfig::_from_json(json_data);
   OrbbecCaptureConfig &config = *this;
   // version and type should already have been checked.
@@ -55,39 +55,16 @@ void OrbbecCaptureConfig::from_json(const json &json_data) {
   }
 }
 
-void OrbbecCaptureConfig::to_json(json& json_data) {
+void OrbbecCaptureConfig::_to_json(json& json_data) {
   CwipcBaseCaptureConfig::_to_json(json_data);
   OrbbecCaptureConfig &config = *this;
     json cameras;
     int camera_index = 0;
 
-    for (OrbbecCameraConfig cd : config.all_camera_configs) {
-        json camera;
-        _CWIPC_CONFIG_JSON_PUT(camera, serial, cd, serial);
-        _CWIPC_CONFIG_JSON_PUT(camera, type, cd, type);
-        _CWIPC_CONFIG_JSON_PUT(camera, disabled, cd, disabled);
-
-        if (cd.filename != "") {
-            _CWIPC_CONFIG_JSON_PUT(camera, filename, cd, filename);
-        }
-
-        camera["trafo"] = {
-            {(*cd.trafo)(0, 0), (*cd.trafo)(0, 1), (*cd.trafo)(0, 2), (*cd.trafo)(0, 3)},
-            {(*cd.trafo)(1, 0), (*cd.trafo)(1, 1), (*cd.trafo)(1, 2), (*cd.trafo)(1, 3)},
-            {(*cd.trafo)(2, 0), (*cd.trafo)(2, 1), (*cd.trafo)(2, 2), (*cd.trafo)(2, 3)},
-            {(*cd.trafo)(3, 0), (*cd.trafo)(3, 1), (*cd.trafo)(3, 2), (*cd.trafo)(3, 3)},
-        };
-
-        if (cd.intrinsicTrafo != nullptr) {
-            camera["intrinsicTrafo"] = {
-               {(*cd.intrinsicTrafo)(0, 0), (*cd.intrinsicTrafo)(0, 1), (*cd.intrinsicTrafo)(0, 2), (*cd.intrinsicTrafo)(0, 3)},
-               {(*cd.intrinsicTrafo)(1, 0), (*cd.intrinsicTrafo)(1, 1), (*cd.intrinsicTrafo)(1, 2), (*cd.intrinsicTrafo)(1, 3)},
-               {(*cd.intrinsicTrafo)(2, 0), (*cd.intrinsicTrafo)(2, 1), (*cd.intrinsicTrafo)(2, 2), (*cd.intrinsicTrafo)(2, 3)},
-               {(*cd.intrinsicTrafo)(3, 0), (*cd.intrinsicTrafo)(3, 1), (*cd.intrinsicTrafo)(3, 2), (*cd.intrinsicTrafo)(3, 3)},
-            };
-        }
-
-        cameras[camera_index] = camera;
+    for (OrbbecCameraConfig camera_config : config.all_camera_configs) {
+        json camera_config_json;
+        camera_config._to_json(camera_config_json);
+        cameras[camera_index] = camera_config_json;
         camera_index++;
     }
 
@@ -134,18 +111,16 @@ void OrbbecCaptureConfig::to_json(json& json_data) {
 
     json_data["skeleton"] = skeleton;
     json_data["system"] = system_data;
-    json_data["version"] = 3;
-    json_data["type"] = config.type;
 }
 
-bool cwipc_orbbec_jsonfile2config(const char *filename, OrbbecCaptureConfig *config, std::string typeWanted) {
+bool OrbbecCaptureConfig::from_file(const char *filename, std::string typeWanted) {
   json json_data;
 
   try {
     std::ifstream f(filename);
 
     if (!f.is_open()) {
-      _log_error(std::string("CameraConfig ") + filename + " not found");
+      cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + " not found");
       return false;
     }
 
@@ -155,7 +130,7 @@ bool cwipc_orbbec_jsonfile2config(const char *filename, OrbbecCaptureConfig *con
     json_data.at("version").get_to(version);
 
     if (version != 3) {
-      _log_error(std::string("CameraConfig ") + filename + " ignored, is not version 3");
+      cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + " ignored, is not version 3");
       return false;
     }
 
@@ -163,20 +138,20 @@ bool cwipc_orbbec_jsonfile2config(const char *filename, OrbbecCaptureConfig *con
     json_data.at("type").get_to(type);
 
     if (type != typeWanted) {
-      _log_error(std::string("CameraConfig ") + filename + " ignored, is not " + typeWanted + " but " + type);
+      cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + " ignored, is not " + typeWanted + " but " + type);
       return false;
     }
 
-    from_json(json_data, *config);
+    _from_json(json_data);
   } catch (const std::exception &e) {
-    _log_error(std::string("CameraConfig ") + filename + ": exception " + e.what());
+    cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + ": exception " + e.what());
     return false;
   }
 
   return true;
 }
 
-bool cwipc_orbbec_jsonbuffer2config(const char *jsonBuffer, OrbbecCaptureConfig *config, std::string typeWanted) {
+bool OrbbecCaptureConfig::from_string(const char *jsonBuffer, std::string typeWanted) {
   json json_data;
 
   try {
@@ -186,7 +161,7 @@ bool cwipc_orbbec_jsonbuffer2config(const char *jsonBuffer, OrbbecCaptureConfig 
     json_data.at("version").get_to(version);
 
     if (version != 3) {
-      _log_error(std::string("CameraConfig ") + "(inline buffer) " + "ignored, is not version 3");
+      cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + "(inline buffer) " + "ignored, is not version 3");
       return false;
     }
 
@@ -194,25 +169,22 @@ bool cwipc_orbbec_jsonbuffer2config(const char *jsonBuffer, OrbbecCaptureConfig 
     json_data.at("type").get_to(type);
 
     if (type != "orbbec") {
-      _log_error(std::string("CameraConfig ") + "(inline buffer) " + "ignored, is not orbbec but " + type);
+      cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + "(inline buffer) " + "ignored, is not orbbec but " + type);
       return false;
     }
 
-    from_json(json_data, *config);
+    _from_json(json_data);
   } catch (const std::exception &e) {
-    _log_error(std::string("CameraConfig ") + "(inline buffer) " + ": exception " + e.what());
+    cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + "(inline buffer) " + ": exception " + e.what());
     return false;
   }
-
-  json dbg_result;
-  to_json(dbg_result, *config);
 
   return true;
 }
 
-std::string cwipc_orbbec_config2string(OrbbecCaptureConfig *config) {
+std::string OrbbecCaptureConfig::to_string() {
   json result;
-  to_json(result, *config);
+  _to_json(result);
 
   return result.dump();
 }

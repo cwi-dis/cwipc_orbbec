@@ -10,9 +10,10 @@
 #include "OrbbecConfig.hpp"
 typedef void *xxxjack_dont_know_yet;
 template<typename Type_api_camera> class OrbbecBaseCamera : public CwipcBaseCamera {
+public:
+  float pointSize = 0;
 protected:
-  std::thread *capture_thread;
-  std::string CLASSNAME;
+  std::thread *grabber_thread;
   OrbbecCaptureConfig& configuration;
   Type_api_camera* camera_handle;
   bool stopped = true;
@@ -42,11 +43,11 @@ protected:
 
 public:
   std::string serial;
-  bool eof = false;
+  bool _eof = false;
   int camera_index;
 
-  OrbbecBaseCamera(const std::string& _Classname, Type_api_camera* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration) :
-    CLASSNAME(_Classname),
+  OrbbecBaseCamera(const std::string& _Classname, Type_api_camera* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration)
+  : CwipcBaseCamera(_Classname + ": " + _camera_configuration.serial, "orbbec"),
     camera_handle(_handle),
     configuration(_configuration),
     camera_index(_camera_index),
@@ -57,10 +58,12 @@ public:
     camera_sync_is_used(_configuration.sync_master_serial != ""),
     do_height_filtering(_configuration.height_min != _configuration.height_max),
     captured_frame_queue(1),
-    processing_frame_queue(1) {
+    processing_frame_queue(1)
+ {
   }
 
   virtual ~OrbbecBaseCamera() {
+    // xxxjack implement proper stopping and cleanup
   }
 
   virtual bool start() = 0;

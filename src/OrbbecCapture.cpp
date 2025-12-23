@@ -1,7 +1,8 @@
 #include "OrbbecCapture.hpp"
 
-OrbbecCapture::OrbbecCapture() : OrbbecBaseCapture("cwipc_orbbec: OrbbecCapture"){
-  type = "orbbec";
+OrbbecCapture::OrbbecCapture()
+: OrbbecBaseCapture<ob::Device, OrbbecCamera>("cwipc_orbbec::OrbbecCapture", "orbbec")
+{
 }
 
 int OrbbecCapture::countDevices() {
@@ -22,11 +23,10 @@ bool OrbbecCapture::_apply_default_config() {
 
     config.serial = deviceList->serialNumber(i);
 
-    pcl::shared_ptr<Eigen::Affine3d> trafo(new Eigen::Affine3d());
-    trafo->setIdentity();
+    pcl::shared_ptr<Eigen::Affine3d> default_trafo(new Eigen::Affine3d());
+    default_trafo->setIdentity();
 
-    config.trafo = trafo;
-    config.intrinsicTrafo = 0;
+    config.trafo = default_trafo;
     config.cameraposition = { 0, 0, 0 };
 
     configuration.all_camera_configs.push_back(config);
@@ -168,7 +168,7 @@ bool OrbbecCapture::config_reload(const char* configFilename) {
 
   stopped = false;
   control_thread = new std::thread(&OrbbecCapture::_control_thread_main, this);
-  cwipc_setThreadName(control_thread, L"cwipc_orbbec::control_thread");
+  _cwipc_setThreadName(control_thread, L"cwipc_orbbec::control_thread");
 
   return false;
 }

@@ -34,8 +34,8 @@ void OrbbecCamera::_start_capture_thread() {
   // XXX IMPLEMENT ME
   assert(!camera_started);
   assert(camera_stopped);
-  capture_thread = new std::thread(&OrbbecCamera::_capture_thread_main, this);
-  // xxxjack _cwipc_setThreadName(capture_thread, L"cwipc_orbbec::OrbecCamera::capture_thread");
+  grabber_thread = new std::thread(&OrbbecCamera::_capture_thread_main, this);
+  // xxxjack _cwipc_setThreadName(grabber_thread, L"cwipc_orbbec::OrbecCamera::grabber_thread");
 }
 
 void OrbbecCamera::_capture_thread_main() {
