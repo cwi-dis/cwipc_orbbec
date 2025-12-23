@@ -78,7 +78,7 @@ public:
     assert(current_frameset && current_frameset.getImpl());
 
     if (!processing_frame_queue.try_enqueue(current_frameset)) {
-        std::cerr << CLASSNAME << ":  camera " << serial << ": drop frame before processing" << std::endl;
+        cwipc_log(CWIPC_LOG_LEVEL_WARNING, CLASSNAME, "create_pc_from_frames: processing_frame_queue full, dropping frame");
         // xxxjack it seems Orbbec does this automatically. k4a_capture_release(current_frameset);
     }
 

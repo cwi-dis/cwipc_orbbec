@@ -329,7 +329,6 @@ protected:
       bool all_captures_ok = _capture_all_cameras();
 
       if (!all_captures_ok) {
-          //std::cerr << CLASSNAME << ": xxxjack not all captures succeeded. Retrying." << std::endl;
           std::this_thread::yield();
           continue;
       }
@@ -351,9 +350,7 @@ protected:
       cwipc* newPC = cwipc_from_pcl(pcl_pointcloud, timestamp, &error_str, CWIPC_API_VERSION);
 
       if (newPC == nullptr) {
-#ifdef CWIPC_DEBUG
-          std::cerr << CLASSNAME << ": cwipc_from_pcl returned error: " << error_str << std::endl;
-#endif
+          _log_error(std::string("capturer failed to create cwipc pointcloud: ") + (error_str ? error_str : "unknown error"));
           break;
       }
 
@@ -411,13 +408,9 @@ protected:
       merge_views();
 
       if (mergedPC->access_pcl_pointcloud()->size() > 0) {
-#ifdef CWIPC_DEBUG
-          std::cerr << CLASSNAME << ": capturer produced a merged cloud of " << mergedPC->count() << " points" << std::endl;
-#endif
+          _log_debug("Capturer produced merged pointcloud with " + std::to_string(mergedPC->access_pcl_pointcloud()->size()) + " points");
       } else {
-#ifdef CWIPC_DEBUG
-          std::cerr << CLASSNAME << ": Warning: capturer got an empty pointcloud\n";
-#endif
+          _log_debug("Capturer produced merged pointcloud with ZERO points");
 
 #if 0
           // HACK to make sure the encoder does not get an empty pointcloud
