@@ -46,42 +46,75 @@ protected:
   virtual void _capture_thread_main() = 0;
 
 public:
-  OrbbecBaseCamera(const std::string& _Classname, Type_api_camera* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration)
-  : CwipcBaseCamera(_Classname + ": " + _camera_configuration.serial, "orbbec"),
-    camera_handle(_handle),
-    configuration(_configuration),
-    camera_index(_camera_index),
-    camera_configuration(_camera_configuration),
-    serial(_camera_configuration.serial),
-    current_frameset(nullptr),
-    camera_sync_is_master(_camera_configuration.serial == _configuration.sync_master_serial),
-    camera_sync_is_used(_configuration.sync_master_serial != ""),
-    do_height_filtering(_configuration.height_min != _configuration.height_max),
-    captured_frame_queue(1),
-    processing_frame_queue(1)
- {
+    OrbbecBaseCamera(const std::string& _Classname, Type_api_camera* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration)
+    : CwipcBaseCamera(_Classname + ": " + _camera_configuration.serial, "orbbec"),
+      camera_handle(_handle),
+      configuration(_configuration),
+      camera_index(_camera_index),
+      camera_configuration(_camera_configuration),
+      serial(_camera_configuration.serial),
+      current_frameset(nullptr),
+      camera_sync_is_master(_camera_configuration.serial == _configuration.sync_master_serial),
+      camera_sync_is_used(_configuration.sync_master_serial != ""),
+      do_height_filtering(_configuration.height_min != _configuration.height_max),
+      captured_frame_queue(1),
+      processing_frame_queue(1)
+  {
   }
 
-  virtual ~OrbbecBaseCamera() {
-    // xxxjack implement proper stopping and cleanup
-  }
+    virtual ~OrbbecBaseCamera() {
+      // xxxjack implement proper stopping and cleanup
+    }
 
-      /// Step 1 in starting: tell the camera we are going to start. Called for all cameras.
-    virtual bool pre_start_all_cameras() final { return true; }
+    /// Step 1 in starting: tell the camera we are going to start. Called for all cameras.
+    virtual bool pre_start_all_cameras() final { 
+      if (!_init_filters()) {
+          return false;
+      }
+      if (!_init_hardware_for_this_camera()) {
+          return false;
+      }
+      return true;
+    }
     /// Step 2 in starting: starts the camera. Called for all cameras. 
-    virtual bool start_camera() = 0;
+    virtual bool start_camera() override = 0;
     /// Step 3 in starting: starts the capturer. Called after all cameras have been started.
-    virtual void start_camera_streaming() = 0;
+    virtual void start_camera_streaming() override = 0;
     /// Step 4, called after all capturers have been started.
-    virtual void post_start_all_cameras() final {}
-    virtual void pre_stop_camera() final {}
-    virtual void stop_camera() = 0;
+    virtual void post_start_all_cameras() override final {
+
+    }
+    virtual void pre_stop_camera() override final {
+      
+    }
+    virtual void stop_camera() override = 0;
 
 
-  virtual bool is_sync_master() final {
-    return camera_sync_is_master;
-  }
-
+    virtual bool is_sync_master() override final {
+      return camera_sync_is_master;
+    }
+protected:
+    // internal API that is "shared" with other implementations (realsense, kinect)
+    /// Initialize any hardware settings for this camera.
+    /// Also see xxxjack
+    virtual bool _init_hardware_for_this_camera() override = 0;
+    /// Initialize any filters that will be applied to all RGB/D images.
+    virtual bool _init_filters() override final {
+      // Orbbec API does not provide any filtering that needs to be initialized.
+      return true;
+    }
+    /// Apply filter to a frameset.
+    virtual void _apply_filters() final {
+      // xxxjack to be implemented, maybe
+    }
+    /// Initialize the body tracker
+    virtual bool _init_tracker() override final { 
+      // Body tracker not supported for Orbbec
+      return true; 
+    }
+    /// Create per-API configuration for starting the camera 
+    /// virtual void _prepare_config_for_starting_camera(...) = 0;
+public:
   virtual void create_pc_from_frames() final {
     assert(current_frameset && current_frameset.getImpl());
 
