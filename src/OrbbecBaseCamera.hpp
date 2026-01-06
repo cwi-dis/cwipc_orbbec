@@ -9,41 +9,9 @@
 #include "cwipc_util/capturers.hpp"
 #include "OrbbecConfig.hpp"
 typedef void *xxxjack_dont_know_yet;
-template<typename Type_api_camera> class OrbbecBaseCamera : public CwipcBaseCamera {
-public:
-  float pointSize = 0;
-  std::string serial;
-  bool _eof = false;
-  int camera_index;
+template<typename Type_api_camera> 
+class OrbbecBaseCamera : public CwipcBaseCamera {
 
-protected:
-  std::thread *grabber_thread;
-  OrbbecCaptureConfig& configuration;
-  Type_api_camera* camera_handle;
-  bool stopped = true;
-  bool camera_started = false;
-  bool camera_stopped = true;
-
-  OrbbecCameraConfig& camera_configuration;
-
-  bool processing_done = false;
-
-  cwipc_pcl_pointcloud current_pointcloud = nullptr;  //<! Most recent grabbed pointcloud
-  ob::Pipeline camera_pipeline;
-  moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;
-  moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> processing_frame_queue;
-  std::shared_ptr<ob::FrameSet> current_frameset;
-  bool camera_sync_is_master;
-  bool camera_sync_is_used;
-  bool do_height_filtering;
-  std::mutex processing_mutex;  //<! Exclusive lock for frame to pointcloud processing.
-  std::condition_variable processing_done_cv; //<! Condition variable signalling pointcloud ready
-
-  std::string record_to_file;
-
-
-  virtual void _start_capture_thread() = 0;
-  virtual void _capture_thread_main() = 0;
 
 public:
     OrbbecBaseCamera(const std::string& _Classname, Type_api_camera* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration)
@@ -122,8 +90,7 @@ public:
         cwipc_log(CWIPC_LOG_LEVEL_WARNING, CLASSNAME, "create_pc_from_frames: processing_frame_queue full, dropping frame");
         // xxxjack it seems Orbbec does this automatically. k4a_capture_release(current_frameset);
     }
-
-}
+  }
 
 virtual void wait_for_pc() final {
     std::unique_lock<std::mutex> lock(processing_mutex);
@@ -138,4 +105,38 @@ virtual void wait_for_pc() final {
   virtual cwipc_pcl_pointcloud get_current_pointcloud() final {
       return current_pointcloud;
   }
+public:
+  float pointSize = 0;
+  std::string serial;
+  bool _eof = false;
+  int camera_index;
+
+protected:
+  std::thread *grabber_thread;
+  OrbbecCaptureConfig& configuration;
+  Type_api_camera* camera_handle;
+  bool stopped = true;
+  bool camera_started = false;
+  bool camera_stopped = true;
+
+  OrbbecCameraConfig& camera_configuration;
+
+  bool processing_done = false;
+
+  cwipc_pcl_pointcloud current_pointcloud = nullptr;  //<! Most recent grabbed pointcloud
+  ob::Pipeline camera_pipeline;
+  moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;
+  moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> processing_frame_queue;
+  std::shared_ptr<ob::FrameSet> current_frameset;
+  bool camera_sync_is_master;
+  bool camera_sync_is_used;
+  bool do_height_filtering;
+  std::mutex processing_mutex;  //<! Exclusive lock for frame to pointcloud processing.
+  std::condition_variable processing_done_cv; //<! Condition variable signalling pointcloud ready
+
+  std::string record_to_file;
+
+
+  virtual void _start_capture_thread() = 0;
+  virtual void _capture_thread_main() = 0;
 };
