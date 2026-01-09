@@ -1,7 +1,7 @@
 #include "OrbbecCapture.hpp"
 
 OrbbecCapture::OrbbecCapture()
-: OrbbecBaseCapture<ob::Device, OrbbecCamera>("cwipc_orbbec::OrbbecCapture", "orbbec")
+: OrbbecBaseCapture<Type_api_camera,Type_our_camera>("cwipc_orbbec::OrbbecCapture", "orbbec")
 {
 }
 
@@ -41,30 +41,9 @@ bool OrbbecCapture::_apply_auto_config() {
   return true;
 }
 
-bool OrbbecCapture::openCameras() {
-  ob::Context context;
-  auto deviceList = context.queryDeviceList();
 
-  for (int i = 0; i < deviceList->deviceCount(); i++) {
-    const char* serialNum = deviceList->serialNumber(i);
-    OrbbecCameraConfig* config = get_camera_config(serialNum);
-
-    if (config == 0) {
-      _log_error(std::string("Camera ") + serialNum + " not found in configuration");
-      return false;
-    }
-
-    if (config->disabled) {
-      config->handle = 0;
-    } else {
-      config->handle = deviceList->getDevice(i);
-    }
-  }
-
-  return true;
-}
-
-bool OrbbecCapture::initializeHardwareSettings() {
+bool OrbbecCapture::_init_hardware_for_all_cameras() {
+  // xxxjack needs to go to per-camera
   for (auto &config : configuration.all_camera_configs) {
     if (config.disabled || config.handle == 0) {
       continue;
@@ -116,70 +95,58 @@ bool OrbbecCapture::initializeHardwareSettings() {
   return true;
 }
 
-bool OrbbecCapture::createCameras() {
-  for (auto &config : configuration.all_camera_configs) {
-    if (config.disabled || config.handle == 0) {
-      continue;
-    }
+bool OrbbecCapture::_create_cameras() {
+  ob::Context context;
+  auto deviceList = context.queryDeviceList();
 
-    ob::Device* device = config.handle.get();
+  for (int i = 0; i < deviceList->deviceCount(); i++) {
+    Type_api_camera handle;
+    const char* serialNum = deviceList->serialNumber(i);
+    OrbbecCameraConfig* cd = get_camera_config(serialNum);
 
-    if (config.type != type) {
-      _log_error(std::string("Camera ") + config.serial + " is not a " + type + " camera");
+    if (cd == nullptr) {
+      _log_error(std::string("Camera with serial ") + serialNum + " is connected but not in configuration");
       return false;
     }
 
-    int cameraIndex = cameras.size();
-    auto camera = new Type_our_camera(device, configuration, cameraIndex, config);
-    cameras.push_back(camera);
+    if (cd->type != "orbbect") {
+      _log_error(std::string("Camera ") + serialNum + " is type " + cd->type + " in stead of orbbec");
+      return false;
+    }
+    if (cd->disabled) {
+      // xxxjack do we need to close it?
+    } else {
+      int camera_index = cameras.size();
+      auto cam = _create_single_camera(handle, configuration, camera_index, *cd);
+      cameras.push_back(cam);
+      cd->connected = true;
+    }
   }
-
   return true;
 }
 
-bool OrbbecCapture::config_reload_and_start_capturing(const char* configFilename) {
-  _unload_cameras();
 
-  if (countDevices() == 0) {
-    return false;
-  }
-
-  if (!apply_config(configFilename)) {
-    camera_count = 0;
-    return false;
-  }
-
-  if (!openCameras()) {
-    camera_count = 0;
-    return false;
-  }
-
-  if (!initializeHardwareSettings()) {
-    camera_count = 0;
-    return false;
-  }
-
-  if (!createCameras()) {
-    _unload_cameras();
-    return false;
-  }
-
-  _init_camera_positions();
-  _start_cameras();
-
-  stopped = false;
-  control_thread = new std::thread(&OrbbecCapture::_control_thread_main, this);
-  _cwipc_setThreadName(control_thread, L"cwipc_orbbec::control_thread");
-
-  return false;
+bool OrbbecCapture::_check_cameras_connected() {
+    for (auto& cd : configuration.all_camera_configs) {
+        if (!cd.connected && !cd.disabled) {
+            _log_warning("Camera with serial " + cd.serial + " is not connected");
+            return false;
+        }
+    }
+    return true;
 }
 
-bool OrbbecCapture::_capture_all_cameras() {
+bool OrbbecCapture::_capture_all_cameras(uint64_t& timestamp) {
   bool capturesOk = true;
-
+  timestamp = 0;
   for (auto cam : cameras) {
     if (!cam->capture_frameset()) {
       capturesOk = false;
+      continue;
+    }
+    uint64_t camts = cam->get_capture_timestamp();
+    if (camts > timestamp) {
+        timestamp = camts;
     }
   }
 

@@ -14,7 +14,7 @@ class OrbbecBaseCamera : public CwipcBaseCamera {
 
 
 public:
-    OrbbecBaseCamera(const std::string& _Classname, Type_api_camera* _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration)
+    OrbbecBaseCamera(const std::string& _Classname, Type_api_camera _handle, OrbbecCaptureConfig& _configuration, int _camera_index, OrbbecCameraConfig& _camera_configuration)
     : CwipcBaseCamera(_Classname + ": " + _camera_configuration.serial, "orbbec"),
       camera_handle(_handle),
       configuration(_configuration),
@@ -83,16 +83,16 @@ protected:
     /// Create per-API configuration for starting the camera 
     /// virtual void _prepare_config_for_starting_camera(...) = 0;
 public:
-  virtual void create_pc_from_frames() final {
+  virtual void process_pointcloud_from_frameset() final {
     assert(current_frameset && current_frameset.getImpl());
 
     if (!processing_frame_queue.try_enqueue(current_frameset)) {
-        cwipc_log(CWIPC_LOG_LEVEL_WARNING, CLASSNAME, "create_pc_from_frames: processing_frame_queue full, dropping frame");
+        cwipc_log(CWIPC_LOG_LEVEL_WARNING, CLASSNAME, "process_pointcloud_from_frameset: processing_frame_queue full, dropping frame");
         // xxxjack it seems Orbbec does this automatically. k4a_capture_release(current_frameset);
     }
   }
 
-virtual void wait_for_pc() final {
+virtual void wait_for_pointcloud_processed() final {
     std::unique_lock<std::mutex> lock(processing_mutex);
     processing_done_cv.wait(lock, [this] { return processing_done; });
     processing_done = false;
@@ -102,7 +102,7 @@ virtual void wait_for_pc() final {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
   }
 
-  virtual cwipc_pcl_pointcloud get_current_pointcloud() final {
+  virtual cwipc_pcl_pointcloud access_current_pcl_pointcloud() final {
       return current_pointcloud;
   }
 public:
@@ -114,7 +114,7 @@ public:
 protected:
   std::thread *grabber_thread;
   OrbbecCaptureConfig& configuration;
-  Type_api_camera* camera_handle;
+  Type_api_camera camera_handle;
   bool stopped = true;
   bool camera_started = false;
   bool camera_stopped = true;

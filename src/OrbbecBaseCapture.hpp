@@ -19,21 +19,77 @@ public:
   }
 
     virtual int get_camera_count() override final { 
-        return camera_count; 
+        return cameras.size(); 
     }
 
     virtual bool is_valid() override final { 
-        return camera_count > 0; 
+        return cameras.size() > 0; 
     }
-      
-    virtual bool config_reload_and_start_capturing(const char* filename) override = 0;
+
+    virtual bool config_reload_and_start_capturing(const char* configFilename) override final{
+        _unload_cameras();
+
+        //
+        // Read the configuration.
+        //
+        if (!_apply_config(configFilename)) {
+            return false;
+        }
+
+        auto camera_config_count = configuration.all_camera_configs.size();
+        if (camera_config_count == 0) {
+            return false;
+        }
+
+        //
+        // Initialize hardware capture setting (for all cameras)
+        //
+        if (!_init_hardware_for_all_cameras()) {
+            // xxxjack we should really close all cameras too...
+            camera_config_count = 0;
+            return false;
+        }
+
+        _setup_inter_camera_sync();
+
+        // Now we have all the configuration information. Create our K4ACamera objects.
+        if (!_create_cameras()) {
+            _unload_cameras();
+            return false;
+        }
+
+        if (!_check_cameras_connected()) {
+            _unload_cameras();
+            return false;
+        }
+        _start_cameras();
+
+        //
+        // start our run thread (which will drive the capturers and merge the pointclouds)
+        //
+
+        stopped = false;
+        control_thread = new std::thread(&OrbbecBaseCapture::_control_thread_main, this);
+        _cwipc_setThreadName(control_thread, L"cwipc_orbbec::control_thread");
+
+        return true;
+    }
 
     virtual std::string config_get() override {
         return configuration.to_string();
     }
 
+    /// Tell the capturer that each point cloud should also include RGB and/or D images and/or RGB/D capture timestamps.
+    virtual void request_auxiliary_data(bool rgb, bool depth, bool timestamps, bool skeleton) override final {
+#ifdef xxxjack_notyet
+      configuration.auxData.want_auxdata_rgb = rgb;
+      configuration.auxData.want_auxdata_depth = depth;
+      configuration.auxData.want_auxdata_timestamps = timestamps;
+#endif
+    }
+
     virtual bool pointcloud_available(bool wait) override final {
-        if (camera_count == 0) {
+        if (!is_valid() == 0) {
             return false;
         }
 #ifdef xxxjack_implement_me
@@ -54,7 +110,7 @@ public:
     }
 
     virtual cwipc* get_pointcloud() override final {
-        if (camera_count == 0) {
+        if (!is_valid()) {
           _log_warning("get_pointcloud: returning NULL, no cameras");
           return nullptr;
         }
@@ -90,7 +146,7 @@ public:
     }
 
     virtual float get_pointSize() override final {
-        if (camera_count == 0) {
+        if (!is_valid()) {
             return 0;
         }
 
@@ -120,94 +176,26 @@ public:
 #endif
         return false;
     }
+    
     virtual bool mapcolordepth(int tile, int u, int v, int* out2d) override final
     {
         // For Kinect the RGB and D images have the same coordinate system.
+        // xxxjack check this is true for Orbbec too.
         out2d[0] = u;
         out2d[1] = v;
         return true;
     }
 
-    virtual bool seek(uint64_t timestamp) override = 0;
-
     bool eof() override {
         return _eof;
     }
 
-public:
-  OrbbecCaptureConfig configuration;
+    virtual bool seek(uint64_t timestamp) override = 0;
+
 protected:
-  std::vector<Type_our_camera*> cameras;
-
-  int camera_count = 0;
-  bool stopped = false;
-  bool _eof = false;
-
-  uint64_t starttime = 0;
-  int numberOfPCsProduced = 0;
-
-  cwipc* mergedPC;
-  std::mutex mergedPC_mutex;
-
-  bool mergedPC_is_fresh = false;
-  std::condition_variable mergedPC_is_fresh_cv;
-
-  bool mergedPC_want_new = false;
-  std::condition_variable mergedPC_want_new_cv;
-
-  std::thread* control_thread = 0;
-
-public:
-
-  void _unload_cameras() {
-    stop();
-
-    for (auto cam : cameras) {
-      delete cam;
-    }
-
-    cameras.clear();
-    camera_count = 0;
-  }
-
-  virtual void stop() final {
-    stopped = true;
-    mergedPC_is_fresh = true;
-    mergedPC_want_new = false;
-
-    mergedPC_is_fresh_cv.notify_all();
-
-    mergedPC_want_new = true;
-    mergedPC_want_new_cv.notify_all();
-
-    if (control_thread && control_thread->joinable()) {
-      control_thread->join();
-    }
-
-    delete control_thread;
-    control_thread = 0;
-
-    for (auto cam : cameras) {
-      cam->stop_camera();
-    }
-
-    mergedPC_is_fresh = false;
-    mergedPC_want_new = false;
-  }
-
-  virtual OrbbecCameraConfig* get_camera_config(std::string serial) final {
-    for (int i = 0; i < configuration.all_camera_configs.size(); i++) {
-      if (configuration.all_camera_configs[i].serial == serial) {
-        return &configuration.all_camera_configs[i];
-      }
-    }
-
-    _log_error("Unknown camera " + serial);
-    return 0;
-  }
-protected:
-
-  virtual bool apply_config(const char* configFilename) final {
+  /// Load configuration from file or string.
+  virtual bool _apply_config(const char* configFilename) override final {
+    // xxxjack keep configuration.auxData
     if (configFilename == 0 || *configFilename == '\0') {
       configFilename = "cameraconfig.json";
     }
@@ -227,31 +215,35 @@ protected:
 
     return false;
   }
-  virtual bool _apply_auto_config() = 0;
-
-  virtual void _init_camera_positions() final {
-    for (auto &config : configuration.all_camera_configs) {
-      if (config.disabled) {
-        continue;
+  /// Load default configuration based on hardware cameras connected.
+  virtual bool _apply_auto_config() override = 0;
+  /// Get configuration for a single camera, by serial number.
+  OrbbecCameraConfig* get_camera_config(std::string serial) {
+    for (int i = 0; i < configuration.all_camera_configs.size(); i++) {
+      if (configuration.all_camera_configs[i].serial == serial) {
+        return &configuration.all_camera_configs[i];
       }
-
-      cwipc_pcl_pointcloud pointCloud(new_cwipc_pcl_pointcloud());
-      cwipc_pcl_point point;
-
-      point.x = 0;
-      point.y = 0;
-      point.z = 0;
-
-      pointCloud->push_back(point);
-      transformPointCloud(*pointCloud, *pointCloud, *config.trafo);
-
-      cwipc_pcl_point transformedPoint = pointCloud->points[0];
-
-      config.cameraposition.x = transformedPoint.x;
-      config.cameraposition.y = transformedPoint.y;
-      config.cameraposition.z = transformedPoint.z;
     }
+
+    _log_error("Unknown camera " + serial);
+    return 0;
   }
+  /// Create our wrapper around a single camera. Here because it needs to be templated.
+  virtual inline Type_our_camera *_create_single_camera(Type_api_camera _handle, OrbbecCaptureConfig& configuration, int _camera_index, OrbbecCameraConfig& _camData) final {
+      return new Type_our_camera(_handle, configuration, _camera_index, _camData);
+  }
+
+  /// Setup camera synchronization (if needed).
+  virtual bool _setup_inter_camera_sync() override final {
+      // Nothing to do for K4A: real cameras need some setup, but it is done
+      // in K4ACamera::_prepare_config_for_starting_camera().
+      return true;
+  }
+  /// xxxjack another one?
+  virtual void _initial_camera_synchronization() override {
+  }
+
+
 
   virtual void _start_cameras() final {
     bool start_error = false;
@@ -312,7 +304,47 @@ protected:
     }
   }
 
-  virtual void _control_thread_main() final {
+  virtual void _unload_cameras() override final {
+    _stop_cameras();
+
+    for (auto cam : cameras) {
+      delete cam;
+    }
+
+    cameras.clear();
+    _log_debug("deleted all cameras");
+  }
+
+  virtual void _stop_cameras() override final {
+    stopped = true;
+    mergedPC_is_fresh = true;
+    mergedPC_want_new = false;
+
+    mergedPC_is_fresh_cv.notify_all();
+
+    mergedPC_want_new = true;
+    mergedPC_want_new_cv.notify_all();
+
+    if (control_thread && control_thread->joinable()) {
+      control_thread->join();
+    }
+
+    delete control_thread;
+    control_thread = 0;
+
+    for (auto cam : cameras) {
+      cam->stop_camera();
+    }
+
+    mergedPC_is_fresh = false;
+    mergedPC_want_new = false;
+  }
+
+protected:
+
+  void _control_thread_main() {
+    _log_debug_thread("processing thread started");
+    _initial_camera_synchronization();
     // XXX IMPLEMENT ME
     while (!stopped) {
       {
@@ -336,7 +368,8 @@ protected:
       // Step one: grab frames from all cameras. This should happen as close together in time as possible,
       // because that gives use he biggest chance we have the same frame (or at most off-by-one) for each
       // camera.
-      bool all_captures_ok = _capture_all_cameras();
+      uint64_t timestamp = 0;
+      bool all_captures_ok = _capture_all_cameras(timestamp);
 
       if (!all_captures_ok) {
           std::this_thread::yield();
@@ -347,35 +380,21 @@ protected:
           break;
       }
 
-      // And get the best timestamp
-      uint64_t timestamp = _get_best_timestamp();
       if (configuration.new_timestamps) {
           timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
       }
-      // xxxjack current_ts = timestamp;
 
       // Step 2 - Create pointcloud, and save rgb/depth images if wanted
+      if (configuration.debug) _log_debug("creating pc with ts=" + std::to_string(timestamp));
       cwipc_pcl_pointcloud pcl_pointcloud = new_cwipc_pcl_pointcloud();
-      char* error_str = NULL;
-      cwipc* newPC = cwipc_from_pcl(pcl_pointcloud, timestamp, &error_str, CWIPC_API_VERSION);
+      cwipc* newPC = cwipc_from_pcl(pcl_pointcloud, timestamp, nullptr, CWIPC_API_VERSION);
 
-      if (newPC == nullptr) {
-          _log_error(std::string("capturer failed to create cwipc pointcloud: ") + (error_str ? error_str : "unknown error"));
-          break;
-      }
 
 #ifdef xxxjack_notyet
-      if (want_auxdata_rgb || want_auxdata_depth) {
-          for (auto cam : cameras) {
-              cam->save_auxdata_images(newPC, want_auxdata_rgb, want_auxdata_depth);
-          }
+      for (auto cam : cameras) {
+          cam->save_frameset_auxdata(newPC);
       }
 
-      if (want_auxdata_skeleton) {
-          for (auto cam : cameras) {
-              cam->save_auxdata_skeleton(newPC);
-          }
-      }
 #endif
       if (stopped) {
           break;
@@ -383,7 +402,7 @@ protected:
 
       // Step 3: start processing frames to pointclouds, for each camera
       for (auto cam : cameras) {
-          cam->create_pc_from_frames();
+          cam->process_pointcloud_from_frameset();
       }
 
       if (stopped) {
@@ -407,7 +426,7 @@ protected:
 
       // Step 4: wait for frame processing to complete.
       for (auto cam : cameras) {
-          cam->wait_for_pc();
+          cam->wait_for_pointcloud_processed();
       }
 
       if (stopped) {
@@ -415,68 +434,88 @@ protected:
       }
 
       // Step 5: merge views
-      merge_views();
+      _merge_camera_pointclouds();
 
       if (mergedPC->access_pcl_pointcloud()->size() > 0) {
-          _log_debug("Capturer produced merged pointcloud with " + std::to_string(mergedPC->access_pcl_pointcloud()->size()) + " points");
+          _log_debug("merged pointcloud has  " + std::to_string(mergedPC->access_pcl_pointcloud()->size()) + " points");
       } else {
-          _log_debug("Capturer produced merged pointcloud with ZERO points");
-
-#if 0
-          // HACK to make sure the encoder does not get an empty pointcloud
-          cwipc_pcl_point point;
-          point.x = 1.0;
-          point.y = 1.0;
-          point.z = 1.0;
-          point.rgb = 0.0;
-          mergedPC->points.push_back(point);
-#endif
+          _log_warning("merged pointcloud is empty");
       }
       // Signal that a new mergedPC is available. (Note that we acquired the mutex earlier)
       mergedPC_is_fresh = true;
       mergedPC_want_new = false;
       mergedPC_is_fresh_cv.notify_all();
     }
+    if (configuration.debug) _log_debug_thread("processing thread exiting");
   }
 
-      virtual void merge_views() final {
-        cwipc_pcl_pointcloud aligned_cld(mergedPC->access_pcl_pointcloud());
-        aligned_cld->clear();
-
-        // Pre-allocate space in the merged pointcloud
-        size_t nPoints = 0;
-        for (auto cam : cameras) {
-            cwipc_pcl_pointcloud cam_cld = cam->get_current_pointcloud();
-            if (cam_cld == nullptr) {
-                _log_warning("Camera " + cam->serial + " returned NULL cloud, ignoring");
-                continue;
-            }
-
-            nPoints += cam_cld->size();
-        }
-
-        aligned_cld->reserve(nPoints);
-
-        // Now merge all pointclouds
-        for (auto cam : cameras) {
-            cwipc_pcl_pointcloud cam_cld = cam->get_current_pointcloud();
-
-            if (cam_cld == nullptr) {
-                continue;
-            }
-
-            *aligned_cld += *cam_cld;
-        }
-
-        if (aligned_cld->size() != nPoints) {
-            _log_error("Combined pointcloud has different number of points than expected");
-        }
-    }
-public:
-
-
-
-  virtual bool _capture_all_cameras() = 0;
+  // xxxjack needs to go
   virtual uint64_t _get_best_timestamp() = 0;
+  virtual bool _capture_all_cameras(uint64_t& timestamp) = 0;
 
+
+  void _request_new_pointcloud() {
+      std::unique_lock<std::mutex> mylock(mergedPC_mutex);
+
+      if (!mergedPC_want_new && !mergedPC_is_fresh) {
+          mergedPC_want_new = true;
+          mergedPC_want_new_cv.notify_all();
+      }
+  }
+
+  void _merge_camera_pointclouds() {
+      cwipc_pcl_pointcloud aligned_cld(mergedPC->access_pcl_pointcloud());
+      aligned_cld->clear();
+      // Pre-allocate space in the merged pointcloud
+      size_t nPoints = 0;
+
+      for (auto cam : cameras) {
+          cwipc_pcl_pointcloud cam_cld = cam->access_current_pcl_pointcloud();
+
+          if (cam_cld == 0) {
+              _log_warning("_merge_camera_pointclouds: camera pointcloud is null for some camera" );
+              continue;
+          }
+          nPoints += cam_cld->size();
+      }
+
+      aligned_cld->reserve(nPoints);
+
+      // Now merge all pointclouds
+      for (auto cam : cameras) {
+          cwipc_pcl_pointcloud cam_cld = cam->access_current_pcl_pointcloud();
+
+          if (cam_cld == NULL) {
+              continue;
+          }
+
+          *aligned_cld += *cam_cld;
+      }
+      if (aligned_cld->size() != nPoints) {
+          _log_error("Combined pointcloud has different number of points than expected");
+      }
+
+      // No need to merge aux_data: already inserted into mergedPC by each camera
+  }    
+public:
+  OrbbecCaptureConfig configuration;
+protected:
+  std::vector<Type_our_camera*> cameras;
+
+  bool stopped = false;
+  bool _eof = false;
+
+  uint64_t starttime = 0;
+  int numberOfPCsProduced = 0;
+
+  cwipc* mergedPC;
+  std::mutex mergedPC_mutex;
+
+  bool mergedPC_is_fresh = false;
+  std::condition_variable mergedPC_is_fresh_cv;
+
+  bool mergedPC_want_new = false;
+  std::condition_variable mergedPC_want_new_cv;
+
+  std::thread* control_thread = 0;
 };

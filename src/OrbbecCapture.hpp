@@ -5,20 +5,20 @@
 #include "OrbbecBaseCapture.hpp"
 #include "OrbbecCamera.hpp"
 
-class OrbbecCapture : public OrbbecBaseCapture<ob::Device, OrbbecCamera> {
-  typedef ob::Device Type_api_camera;
+class OrbbecCapture : public OrbbecBaseCapture<std::shared_ptr<ob::Device>, OrbbecCamera> {
+  typedef std::shared_ptr<ob::Device> Type_api_camera;
   typedef OrbbecCamera Type_our_camera;
 
-  virtual bool _apply_auto_config() override;
-  bool initializeHardwareSettings();
-  bool createCameras();
-  bool openCameras();
+  virtual bool _apply_auto_config() override final;
+  virtual bool _init_hardware_for_all_cameras() override final;
+  virtual bool _create_cameras() override final;
+  virtual bool _check_cameras_connected() override final;
 
 protected:
   OrbbecCapture();
 
-  bool _capture_all_cameras() override;
-  uint64_t _get_best_timestamp() override;
+  virtual bool _capture_all_cameras(uint64_t& timestamp) override final;
+  virtual uint64_t _get_best_timestamp() override final;
 
 public:
   static int countDevices();
@@ -30,6 +30,5 @@ public:
   virtual ~OrbbecCapture() {
   }
 
-  virtual bool config_reload_and_start_capturing(const char* configFilename) override;
   bool seek(uint64_t timestamp) override;
 };

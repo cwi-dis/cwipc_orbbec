@@ -3,14 +3,14 @@
 #include "libobsensor/hpp/Device.hpp"
 #include "OrbbecBaseCamera.hpp"
 
-class OrbbecCamera : public OrbbecBaseCamera<ob::Device> {
-    typedef ob::Device Type_api_camera;
+class OrbbecCamera : public OrbbecBaseCamera<std::shared_ptr<ob::Device>> {
+    typedef std::shared_ptr<ob::Device> Type_api_camera;
 
     OrbbecCamera(const OrbbecCamera&);
     OrbbecCamera& operator=(const OrbbecCamera&);
 
 public:
-    OrbbecCamera(Type_api_camera* camera, OrbbecCaptureConfig& config, int cameraIndex, OrbbecCameraConfig& cameraConfig);
+    OrbbecCamera(Type_api_camera camera, OrbbecCaptureConfig& config, int cameraIndex, OrbbecCameraConfig& cameraConfig);
 
     virtual ~OrbbecCamera() {
     }
