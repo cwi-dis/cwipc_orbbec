@@ -21,11 +21,6 @@ void OrbbecCamera::stop_camera() {
 }
 
 bool OrbbecCamera::_init_hardware_for_this_camera() {
-#if 0
-    if (config.disabled || config.handle == 0) {
-      continue;
-    }
-#endif
 
     if (configuration.camera_processing.color_exposure_time >= 0) {
       camera_handle->setIntProperty(OB_PROP_COLOR_EXPOSURE_INT, configuration.camera_processing.color_exposure_time);

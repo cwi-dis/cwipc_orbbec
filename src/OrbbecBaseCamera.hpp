@@ -87,9 +87,10 @@ public:
     assert(current_frameset && current_frameset.getImpl());
 
     if (!processing_frame_queue.try_enqueue(current_frameset)) {
-        cwipc_log(CWIPC_LOG_LEVEL_WARNING, CLASSNAME, "process_pointcloud_from_frameset: processing_frame_queue full, dropping frame");
+        _log_warning("processing_frame_queue full, dropping frame");
         // xxxjack it seems Orbbec does this automatically. k4a_capture_release(current_frameset);
     }
+    current_frameset = nullptr;
   }
 
 virtual void wait_for_pointcloud_processed() final {
@@ -104,6 +105,14 @@ virtual void wait_for_pointcloud_processed() final {
 
   virtual cwipc_pcl_pointcloud access_current_pcl_pointcloud() final {
       return current_pointcloud;
+  }
+
+  void save_frameset_auxdata(cwipc *pc) {
+    // xxxjack to be implemented
+  }
+  bool map2d3d(int x_2d, int y_2d, int d_2d, float* out3d) {
+    // xxxjack to be implemented
+    return false;
   }
 public:
   float pointSize = 0;
