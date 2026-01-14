@@ -26,7 +26,7 @@ public:
       processing(_configuration.processing),
       hardware(_configuration.hardware),
       auxData(_configuration.auxData),
-      camera_handle(_handle),
+      camera_pipeline(_handle),
       captured_frame_queue(1),
       processing_frame_queue(1),
       camera_sync_inuse(configuration.sync.sync_master_serial != ""),
@@ -233,13 +233,12 @@ protected:
   OrbbecCameraHardwareConfig& hardware;
   OrbbecCaptureAuxDataConfig& auxData; //<! Auxiliary data configuration
 
-  Type_api_camera camera_handle;
+  ob::Pipeline camera_pipeline;
   bool camera_started = false;
   bool camera_stopped = true;
   std::thread *camera_capturer_thread;
   std::thread* camera_processing_thread = nullptr; //<! Handle for thread that runs processing loop
   cwipc_pcl_pointcloud current_pcl_pointcloud = nullptr;  //<! Most recent grabbed pointcloud
-  ob::Pipeline camera_pipeline;
   // xxxjack k4a_transformation_t transformation_handle = nullptr; //<! k4a structure describing relationship between RGB and D cameras
 
   moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;

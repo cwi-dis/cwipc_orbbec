@@ -19,7 +19,9 @@ void OrbbecCaptureConfig::_from_json(const json &json_data) {
   }
   if (json_data.contains("hardware")) {
       json hardware_data = json_data.at("hardware");
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_width, hardware, color_width);
       _CWIPC_CONFIG_JSON_GET(hardware_data, color_height, hardware, color_height);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, depth_width, hardware, depth_width);
       _CWIPC_CONFIG_JSON_GET(hardware_data, depth_height, hardware, depth_height);
       _CWIPC_CONFIG_JSON_GET(hardware_data, fps, hardware, fps);
       _CWIPC_CONFIG_JSON_GET(hardware_data, color_exposure_time, hardware, color_exposure_time);
@@ -99,7 +101,9 @@ void OrbbecCaptureConfig::_to_json(json& json_data, bool for_recording) {
   json_data["sync"] = sync_data;
 
   json hardware_data;
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_width, hardware, color_width);
   _CWIPC_CONFIG_JSON_PUT(hardware_data, color_height, hardware, color_height);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, depth_width, hardware, depth_width);
   _CWIPC_CONFIG_JSON_PUT(hardware_data, depth_height, hardware, depth_height);
   _CWIPC_CONFIG_JSON_PUT(hardware_data, fps, hardware, fps);
   _CWIPC_CONFIG_JSON_PUT(hardware_data, color_exposure_time, hardware, color_exposure_time);

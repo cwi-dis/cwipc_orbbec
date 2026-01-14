@@ -17,8 +17,10 @@ struct OrbbecCameraConfig : public CwipcBaseCameraConfig {
 };
 
 struct OrbbecCameraHardwareConfig {
-    int color_height = 720;                     // width of color frame (720, 1080 and various other values allowed, see kinect docs)
-    int depth_height = 576;                // width of depth frame (288, 576, 512 and 1024 allowed)
+    int color_width = 1280;                     // width of color frame (720, 1080 and various other values allowed, see kinect docs)
+    int color_height = 720;                     // height of color frame (720, 1080 and various other values allowed, see kinect docs)
+    int depth_width = 640;                // width of depth frame (288, 576, 512 and 1024 allowed)
+    int depth_height = 576;                // height of depth frame (288, 576, 512 and 1024 allowed)
     int fps = 30;                         // capture fps (5, 15 and 30 allowed)
     int32_t color_exposure_time = -1;     // default for manual: 40000;
     int32_t color_whitebalance = -1;   // default for manual: 3160; range(2500-12500)

@@ -23,6 +23,8 @@ public:
     virtual uint64_t wait_for_captured_frameset(uint64_t minimum_timestamp) override final;
 
 protected:
+    bool _init_config_for_this_camera(std::shared_ptr<ob::Config> config);
+    void _post_start_this_camera();
     virtual bool _init_hardware_for_this_camera() override final;
     virtual void _start_capture_thread() override;
     virtual void _capture_thread_main() override;

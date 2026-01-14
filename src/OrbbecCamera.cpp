@@ -10,18 +10,28 @@ OrbbecCamera::OrbbecCamera(std::shared_ptr<ob::Device> camera, OrbbecCaptureConf
 }
 
 bool OrbbecCamera::start_camera() {
-  // XXX IMPLEMENT ME
-  assert(0);
-  return false;
+  assert(camera_stopped);
+  assert(!camera_started);
+  assert(camera_processing_thread == nullptr);
+  auto config = std::make_shared<ob::Config>();
+  _init_config_for_this_camera(config);
+  camera_pipeline.start();
+  _post_start_this_camera();
+  // xxxjack _computePointSize()??
+  camera_started = true;
+  return true;
+}
+
+void OrbbecCamera::_post_start_this_camera() {
+  // XXX Implement me
 }
 
 void OrbbecCamera::stop_camera() {
-  // XXX IMPLEMENT ME
-  assert(0);
+  camera_pipeline.stop();
 }
 
 bool OrbbecCamera::_init_hardware_for_this_camera() {
-
+    auto camera_handle = camera_pipeline.getDevice();
     if (hardware.color_exposure_time >= 0) {
       camera_handle->setIntProperty(OB_PROP_COLOR_EXPOSURE_INT, hardware.color_exposure_time);
     } else {
@@ -64,27 +74,35 @@ bool OrbbecCamera::_init_hardware_for_this_camera() {
     return true;
 }
 
-void OrbbecCamera::start_camera_streaming() {
-  // XXX IMPLEMENT ME
-  camera_pipeline.start();
-  _start_capture_thread();
-}
-
-uint64_t OrbbecCamera::wait_for_captured_frameset(uint64_t minimum_timestamp) {
-  // XXX IMPLEMENT ME
-  current_captured_frameset = camera_pipeline.waitForFrameset();
+bool OrbbecCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> config) {
+  config->enableVideoStream(OB_STREAM_COLOR, hardware.color_width, hardware.color_height, OB_FORMAT_BGRA);
+  config->enableVideoStream(OB_STREAM_DEPTH, hardware.depth_width, hardware.depth_height, OB_FORMAT_Y16);
   return true;
 }
 
-void OrbbecCamera::_start_capture_thread() {
-  // XXX IMPLEMENT ME
-  assert(!camera_started);
+void OrbbecCamera::start_camera_streaming() {
   assert(camera_stopped);
-  camera_capturer_thread = new std::thread(&OrbbecCamera::_capture_thread_main, this);
-  // xxxjack _cwipc_setThreadName(grabber_thread, L"cwipc_orbbec::OrbecCamera::grabber_thread");
+  camera_stopped = false;
+  _start_capture_thread();
+  _start_processing_thread();
+}
+
+uint64_t OrbbecCamera::wait_for_captured_frameset(uint64_t minimum_timestamp) {
+  if (camera_stopped) return 0;
+  uint64_t resultant_timestamp = 0;
+  do {
+    current_captured_frameset = camera_pipeline.waitForFrameset();
+    std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
+    resultant_timestamp = depth_frame->getTimeStampUs();
+    if (resultant_timestamp < minimum_timestamp) {
+      _log_trace("drop frame with dts=" + std::to_string(resultant_timestamp));
+    }
+  } while (resultant_timestamp < minimum_timestamp);
+  return resultant_timestamp;
+}
+
+void OrbbecCamera::_start_capture_thread() {
 }
 
 void OrbbecCamera::_capture_thread_main() {
-  // XXX IMPLEMENT ME
-  camera_started = true;
 }
