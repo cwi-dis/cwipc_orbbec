@@ -51,7 +51,7 @@ bool OrbbecCapture::_create_cameras() {
   auto deviceList = context.queryDeviceList();
 
   for (int i = 0; i < deviceList->deviceCount(); i++) {
-    Type_api_camera handle; // xxxjack to be done
+    Type_api_camera handle = deviceList->getDevice(i);
     const char* serialNum = deviceList->serialNumber(i);
     OrbbecCameraConfig* cd = get_camera_config(serialNum);
 
