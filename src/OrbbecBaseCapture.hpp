@@ -3,6 +3,8 @@
 #include <string>
 #include <thread>
 #include <condition_variable>
+#include <iostream>
+#include <fstream>
 #include <pcl/common/transforms.h>
 
 #include "cwipc_util/capturers.hpp"
@@ -229,8 +231,8 @@ protected:
     return 0;
   }
   /// Create our wrapper around a single camera. Here because it needs to be templated.
-  virtual inline Type_our_camera *_create_single_camera(Type_api_camera _handle, OrbbecCaptureConfig& configuration, int _camera_index, OrbbecCameraConfig& _camData) final {
-      return new Type_our_camera(_handle, configuration, _camera_index, _camData);
+  virtual inline Type_our_camera *_create_single_camera(Type_api_camera _handle, OrbbecCaptureConfig& configuration, int _camera_index) final {
+      return new Type_our_camera(_handle, configuration, _camera_index);
   }
 
   /// Setup camera synchronization (if needed).
@@ -340,6 +342,18 @@ protected:
     mergedPC_want_new = false;
   }
 
+    /// Create the cameraconfig file for the recording, if needed.
+    virtual void _post_stop_all_cameras() override final {
+        if (configuration.record_to_directory != "") {
+            std::string recording_config = configuration.to_string(true);
+            std::string filename = configuration.record_to_directory + "/" + "cameraconfig.json";
+            std::ofstream ofp;
+            ofp.open(filename);
+            ofp << recording_config << std::endl;
+            ofp.close();
+        }
+    }
+
 protected:
 
   void _control_thread_main() {
@@ -353,7 +367,7 @@ protected:
       }
       //check EOF:
       for (auto cam : cameras) {
-          if (cam->_eof) {
+          if (cam->end_of_stream_reached) {
               _eof = true;
               stopped = true;
               break;
@@ -449,8 +463,6 @@ protected:
     if (configuration.debug) _log_debug_thread("processing thread exiting");
   }
 
-  // xxxjack needs to go
-  virtual uint64_t _get_best_timestamp() = 0;
   virtual bool _capture_all_cameras(uint64_t& timestamp) = 0;
 
 

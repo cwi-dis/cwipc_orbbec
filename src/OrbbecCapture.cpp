@@ -43,55 +43,6 @@ bool OrbbecCapture::_apply_auto_config() {
 
 
 bool OrbbecCapture::_init_hardware_for_all_cameras() {
-  // xxxjack needs to go to per-camera
-  for (auto &config : configuration.all_camera_configs) {
-    if (config.disabled || config.handle == 0) {
-      continue;
-    }
-
-    ob::Device* device = config.handle.get();
-
-    if (configuration.camera_processing.color_exposure_time >= 0) {
-      device->setIntProperty(OB_PROP_COLOR_EXPOSURE_INT, configuration.camera_processing.color_exposure_time);
-    } else {
-      device->setBoolProperty(OB_PROP_COLOR_AUTO_EXPOSURE_BOOL, true);
-    }
-
-    if (configuration.camera_processing.color_whitebalance >= 0) {
-      device->setIntProperty(OB_PROP_COLOR_WHITE_BALANCE_INT, configuration.camera_processing.color_whitebalance);
-    } else {
-      device->setBoolProperty(OB_PROP_COLOR_AUTO_WHITE_BALANCE_BOOL, true);
-    }
-
-    if (configuration.camera_processing.color_backlight_compensation >= 0 && device->isPropertySupported(OB_PROP_COLOR_BACKLIGHT_COMPENSATION_INT, OB_PERMISSION_WRITE)) {
-      device->setIntProperty(OB_PROP_COLOR_BACKLIGHT_COMPENSATION_INT, configuration.camera_processing.color_backlight_compensation);
-    }
-
-    if (configuration.camera_processing.color_brightness >= 0) {
-      device->setIntProperty(OB_PROP_COLOR_BRIGHTNESS_INT, configuration.camera_processing.color_brightness);
-    }
-
-    if (configuration.camera_processing.color_contrast >= 0) {
-      device->setIntProperty(OB_PROP_COLOR_CONTRAST_INT, configuration.camera_processing.color_contrast);
-    }
-
-    if (configuration.camera_processing.color_saturation >= 0) {
-      device->setIntProperty(OB_PROP_COLOR_SATURATION_INT, configuration.camera_processing.color_saturation);
-    }
-
-    if (configuration.camera_processing.color_sharpness >= 0) {
-      device->setIntProperty(OB_PROP_COLOR_SHARPNESS_INT, configuration.camera_processing.color_sharpness);
-    }
-
-    if (configuration.camera_processing.color_gain >= 0) {
-      device->setIntProperty(OB_PROP_COLOR_GAIN_INT, configuration.camera_processing.color_gain);
-    }
-
-    if (configuration.camera_processing.color_powerline_frequency >= 0) {
-      device->setIntProperty(OB_PROP_COLOR_POWER_LINE_FREQUENCY_INT, configuration.camera_processing.color_powerline_frequency);
-    }
-  }
-
   return true;
 }
 
@@ -100,7 +51,7 @@ bool OrbbecCapture::_create_cameras() {
   auto deviceList = context.queryDeviceList();
 
   for (int i = 0; i < deviceList->deviceCount(); i++) {
-    Type_api_camera handle;
+    Type_api_camera handle; // xxxjack to be done
     const char* serialNum = deviceList->serialNumber(i);
     OrbbecCameraConfig* cd = get_camera_config(serialNum);
 
@@ -109,7 +60,7 @@ bool OrbbecCapture::_create_cameras() {
       return false;
     }
 
-    if (cd->type != "orbbect") {
+    if (cd->type != "orbbec") {
       _log_error(std::string("Camera ") + serialNum + " is type " + cd->type + " in stead of orbbec");
       return false;
     }
@@ -117,7 +68,7 @@ bool OrbbecCapture::_create_cameras() {
       // xxxjack do we need to close it?
     } else {
       int camera_index = cameras.size();
-      auto cam = _create_single_camera(handle, configuration, camera_index, *cd);
+      auto cam = _create_single_camera(handle, configuration, camera_index);
       cameras.push_back(cam);
       cd->connected = true;
     }
@@ -137,38 +88,25 @@ bool OrbbecCapture::_check_cameras_connected() {
 }
 
 bool OrbbecCapture::_capture_all_cameras(uint64_t& timestamp) {
-  bool capturesOk = true;
-  timestamp = 0;
-  for (auto cam : cameras) {
-    if (!cam->capture_frameset()) {
-      capturesOk = false;
-      continue;
+    uint64_t first_timestamp = 0;
+    for(auto cam : cameras) {
+        uint64_t this_cam_timestamp = cam->wait_for_captured_frameset(first_timestamp);
+        if (this_cam_timestamp == 0) {
+            _log_warning("no frameset captured from camera");
+            return false;
+        }
+        if (first_timestamp == 0) {
+            first_timestamp = this_cam_timestamp;
+        }
     }
-    uint64_t camts = cam->get_capture_timestamp();
-    if (camts > timestamp) {
-        timestamp = camts;
+
+    // And get the best timestamp
+    if (configuration.new_timestamps) {
+        timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    } else {
+        timestamp = first_timestamp;
     }
-  }
-
-  return capturesOk;
-}
-
-uint64_t OrbbecCapture::_get_best_timestamp() {
-  uint64_t timestamp = 0;
-
-  for (auto cam : cameras) {
-    uint64_t cameraTimestamp = cam->get_capture_timestamp();
-
-    if (cameraTimestamp > timestamp) {
-      timestamp = cameraTimestamp;
-    }
-  }
-
-  if (timestamp <= 0) {
-    timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-  }
-
-  return timestamp;
+    return true;
 }
 
 bool OrbbecCapture::seek(uint64_t timestamp) {

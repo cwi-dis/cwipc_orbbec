@@ -6,43 +6,48 @@ void OrbbecCaptureConfig::_from_json(const json &json_data) {
   CwipcBaseCaptureConfig::_from_json(json_data);
   OrbbecCaptureConfig &config = *this;
   // version and type should already have been checked.
+
   json system_data = json_data.at("system");
-  _CWIPC_CONFIG_JSON_GET(system_data, color_height, config, color_height);
-  _CWIPC_CONFIG_JSON_GET(system_data, depth_height, config, depth_height);
-  _CWIPC_CONFIG_JSON_GET(system_data, fps, config, fps);
   _CWIPC_CONFIG_JSON_GET(system_data, single_tile, config, single_tile);
-  _CWIPC_CONFIG_JSON_GET(system_data, sync_master_serial, config, sync_master_serial);
-  _CWIPC_CONFIG_JSON_GET(system_data, ignore_sync, config, ignore_sync);
   _CWIPC_CONFIG_JSON_GET(system_data, record_to_directory, config, record_to_directory);
-  _CWIPC_CONFIG_JSON_GET(system_data, new_timestamps, config, new_timestamps);
   _CWIPC_CONFIG_JSON_GET(system_data, debug, config, debug);
-  _CWIPC_CONFIG_JSON_GET(system_data, color_exposure_time, config.camera_processing, color_exposure_time);
-  _CWIPC_CONFIG_JSON_GET(system_data, color_whitebalance, config.camera_processing, color_whitebalance);
-  _CWIPC_CONFIG_JSON_GET(system_data, color_brightness, config.camera_processing, color_brightness);
-  _CWIPC_CONFIG_JSON_GET(system_data, color_contrast, config.camera_processing, color_contrast);
-  _CWIPC_CONFIG_JSON_GET(system_data, color_saturation, config.camera_processing, color_saturation);
-  _CWIPC_CONFIG_JSON_GET(system_data, color_gain, config.camera_processing, color_gain);
-  _CWIPC_CONFIG_JSON_GET(system_data, color_powerline_frequency, config.camera_processing, color_powerline_frequency);
-  _CWIPC_CONFIG_JSON_GET(system_data, map_color_to_depth, config.camera_processing, map_color_to_depth);
-
-  json postprocessing = json_data.at("postprocessing");
-  _CWIPC_CONFIG_JSON_GET(postprocessing, greenscreenremoval, config, greenscreen_removal);
-  _CWIPC_CONFIG_JSON_GET(postprocessing, height_min, config, height_min);
-  _CWIPC_CONFIG_JSON_GET(postprocessing, height_max, config, height_max);
-  _CWIPC_CONFIG_JSON_GET(postprocessing, radius_filter, config, radius_filter);
-
-  json depthfilterparameters = postprocessing.at("depthfilterparameters");
-  _CWIPC_CONFIG_JSON_GET(depthfilterparameters, do_threshold, config.camera_processing, do_threshold);
-  _CWIPC_CONFIG_JSON_GET(depthfilterparameters, threshold_near, config.camera_processing, threshold_near);
-  _CWIPC_CONFIG_JSON_GET(depthfilterparameters, threshold_far, config.camera_processing, threshold_far);
-  _CWIPC_CONFIG_JSON_GET(depthfilterparameters, depth_x_erosion, config.camera_processing, depth_x_erosion);
-  _CWIPC_CONFIG_JSON_GET(depthfilterparameters, depth_y_erosion, config.camera_processing, depth_y_erosion);
-
-  json skeleton = json_data.at("skeleton");
-  _CWIPC_CONFIG_JSON_GET(skeleton, sensor_orientation, config, bt_sensor_orientation);
-  _CWIPC_CONFIG_JSON_GET(skeleton, processing_mode, config, bt_processing_mode);
-  _CWIPC_CONFIG_JSON_GET(skeleton, model_path, config, bt_model_path);
-
+  _CWIPC_CONFIG_JSON_GET(system_data, new_timestamps, config, new_timestamps);
+  if (json_data.contains("sync")) {
+      json sync_data = json_data.at("sync");
+      _CWIPC_CONFIG_JSON_GET(sync_data, sync_master_serial, sync, sync_master_serial);
+      _CWIPC_CONFIG_JSON_GET(sync_data, ignore_sync, sync, ignore_sync);
+  }
+  if (json_data.contains("hardware")) {
+      json hardware_data = json_data.at("hardware");
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_height, hardware, color_height);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, depth_height, hardware, depth_height);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, fps, hardware, fps);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_exposure_time, hardware, color_exposure_time);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_whitebalance, hardware, color_whitebalance);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_backlight_compensation, hardware, color_backlight_compensation);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_brightness, hardware, color_brightness);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_contrast, hardware, color_contrast);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_saturation, hardware, color_saturation);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_sharpness, hardware, color_sharpness);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_gain, hardware, color_gain);
+      _CWIPC_CONFIG_JSON_GET(hardware_data, color_powerline_frequency, hardware, color_powerline_frequency);
+  }
+  if (json_data.contains("processing")) {
+      json processing_data = json_data.at("processing");
+      _CWIPC_CONFIG_JSON_GET(processing_data, greenscreenremoval, processing, greenscreen_removal);
+      _CWIPC_CONFIG_JSON_GET(processing_data, depth_x_erosion, processing, depth_x_erosion);
+      _CWIPC_CONFIG_JSON_GET(processing_data, depth_y_erosion, processing, depth_y_erosion);
+      _CWIPC_CONFIG_JSON_GET(processing_data, height_min, processing, height_min);
+      _CWIPC_CONFIG_JSON_GET(processing_data, height_max, processing, height_max);
+      _CWIPC_CONFIG_JSON_GET(processing_data, radius_filter, processing, radius_filter);
+  }
+  if (json_data.contains("filtering")) {
+      json filtering_data = json_data.at("filtering");
+      _CWIPC_CONFIG_JSON_GET(filtering_data, map_color_to_depth, filtering, map_color_to_depth);
+      _CWIPC_CONFIG_JSON_GET(filtering_data, do_threshold, filtering, do_threshold);
+      _CWIPC_CONFIG_JSON_GET(filtering_data, threshold_near, filtering, threshold_near);
+      _CWIPC_CONFIG_JSON_GET(filtering_data, threshold_far, filtering, threshold_far);
+  }
   json cameras = json_data.at("camera");
   int camera_index = 0;
   config.all_camera_configs.clear();
@@ -57,64 +62,71 @@ void OrbbecCaptureConfig::_from_json(const json &json_data) {
   }
 }
 
-void OrbbecCaptureConfig::_to_json(json& json_data) {
-  CwipcBaseCaptureConfig::_to_json(json_data);
+void OrbbecCaptureConfig::_to_json(json& json_data, bool for_recording) {
+  CwipcBaseCaptureConfig::_to_json(json_data, for_recording);
+  if (for_recording) {
+    json_data["type"] = "orbbec_playback";
+  }
   OrbbecCaptureConfig &config = *this;
-    json cameras;
-    int camera_index = 0;
+  json cameras;
+  int camera_index = 0;
 
-    for (OrbbecCameraConfig camera_config : config.all_camera_configs) {
-        json camera_config_json;
-        camera_config._to_json(camera_config_json);
-        cameras[camera_index] = camera_config_json;
-        camera_index++;
-    }
+  for (OrbbecCameraConfig camera_config : config.all_camera_configs) {
+      json camera_config_json;
+      camera_config._to_json(camera_config_json, for_recording);
+      if (for_recording) {
+        camera_config_json["type"] = "orbbec_playback";
+      }
+      cameras[camera_index] = camera_config_json;
+      camera_index++;
+  }
 
-    json_data["camera"] = cameras;
-    json depthfilterparameters;
+  json_data["camera"] = cameras;
+  json system_data;
+  _CWIPC_CONFIG_JSON_PUT(system_data, single_tile, config, single_tile);
+  if (for_recording) {
+      system_data["record_to_directory"] = "";
+  } else {
+      _CWIPC_CONFIG_JSON_PUT(system_data, record_to_directory, config, record_to_directory);
+  }
+  _CWIPC_CONFIG_JSON_PUT(system_data, new_timestamps, config, new_timestamps);
+  _CWIPC_CONFIG_JSON_PUT(system_data, debug, config, debug);
+  json_data["system"] = system_data;
 
-    _CWIPC_CONFIG_JSON_PUT(depthfilterparameters, do_threshold, config.camera_processing, do_threshold);
-    _CWIPC_CONFIG_JSON_PUT(depthfilterparameters, threshold_near, config.camera_processing, threshold_near);
-    _CWIPC_CONFIG_JSON_PUT(depthfilterparameters, threshold_far, config.camera_processing, threshold_far);
-    _CWIPC_CONFIG_JSON_PUT(depthfilterparameters, depth_x_erosion, config.camera_processing, depth_x_erosion);
-    _CWIPC_CONFIG_JSON_PUT(depthfilterparameters, depth_y_erosion, config.camera_processing, depth_y_erosion);
+  json sync_data;
+  _CWIPC_CONFIG_JSON_PUT(sync_data, sync_master_serial, sync, sync_master_serial);
+  _CWIPC_CONFIG_JSON_PUT(sync_data, ignore_sync, sync, ignore_sync);
+  json_data["sync"] = sync_data;
 
-    json postprocessing;
-    postprocessing["depthfilterparameters"] = depthfilterparameters;
+  json hardware_data;
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_height, hardware, color_height);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, depth_height, hardware, depth_height);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, fps, hardware, fps);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_exposure_time, hardware, color_exposure_time);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_whitebalance, hardware, color_whitebalance);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_brightness, hardware, color_brightness);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_contrast, hardware, color_contrast);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_saturation, hardware, color_saturation);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_gain, hardware, color_gain);
+  _CWIPC_CONFIG_JSON_PUT(hardware_data, color_powerline_frequency, hardware, color_powerline_frequency);
+  json_data["hardware"] = hardware_data;
 
-    _CWIPC_CONFIG_JSON_PUT(postprocessing, greenscreenremoval, config, greenscreen_removal);
-    _CWIPC_CONFIG_JSON_PUT(postprocessing, height_min, config, height_min);
-    _CWIPC_CONFIG_JSON_PUT(postprocessing, height_max, config, height_max);
-    _CWIPC_CONFIG_JSON_PUT(postprocessing, radius_filter, config, radius_filter);
+  json processing_data;
+  _CWIPC_CONFIG_JSON_PUT(processing_data, greenscreenremoval, processing, greenscreen_removal);
+  _CWIPC_CONFIG_JSON_PUT(processing_data, depth_x_erosion, processing, depth_x_erosion);
+  _CWIPC_CONFIG_JSON_PUT(processing_data, depth_y_erosion, processing, depth_y_erosion);
+  _CWIPC_CONFIG_JSON_PUT(processing_data, height_min, processing, height_min);
+  _CWIPC_CONFIG_JSON_PUT(processing_data, height_max, processing, height_max);
+  _CWIPC_CONFIG_JSON_PUT(processing_data, radius_filter, processing, radius_filter);
+  json_data["processing"] = processing_data;
+  
+  json filtering_data;
+  _CWIPC_CONFIG_JSON_PUT(filtering_data, do_threshold, filtering, do_threshold);
+  _CWIPC_CONFIG_JSON_PUT(filtering_data, threshold_near, filtering, threshold_near);
+  _CWIPC_CONFIG_JSON_PUT(filtering_data, threshold_far, filtering, threshold_far);
+  _CWIPC_CONFIG_JSON_PUT(filtering_data, map_color_to_depth, filtering, map_color_to_depth);
+  json_data["filtering"] = filtering_data;
 
-    json_data["postprocessing"] = postprocessing;
-
-    json system_data;
-    _CWIPC_CONFIG_JSON_PUT(system_data, color_height, config, color_height);
-    _CWIPC_CONFIG_JSON_PUT(system_data, depth_height, config, depth_height);
-    _CWIPC_CONFIG_JSON_PUT(system_data, fps, config, fps);
-    _CWIPC_CONFIG_JSON_PUT(system_data, single_tile, config, single_tile);
-    _CWIPC_CONFIG_JSON_PUT(system_data, sync_master_serial, config, sync_master_serial);
-    _CWIPC_CONFIG_JSON_PUT(system_data, ignore_sync, config, ignore_sync);
-    _CWIPC_CONFIG_JSON_PUT(system_data, record_to_directory, config, record_to_directory);
-    _CWIPC_CONFIG_JSON_PUT(system_data, new_timestamps, config, new_timestamps);
-    _CWIPC_CONFIG_JSON_PUT(system_data, debug, config, debug);
-    _CWIPC_CONFIG_JSON_PUT(system_data, color_exposure_time, config.camera_processing, color_exposure_time);
-    _CWIPC_CONFIG_JSON_PUT(system_data, color_whitebalance, config.camera_processing, color_whitebalance);
-    _CWIPC_CONFIG_JSON_PUT(system_data, color_brightness, config.camera_processing, color_brightness);
-    _CWIPC_CONFIG_JSON_PUT(system_data, color_contrast, config.camera_processing, color_contrast);
-    _CWIPC_CONFIG_JSON_PUT(system_data, color_saturation, config.camera_processing, color_saturation);
-    _CWIPC_CONFIG_JSON_PUT(system_data, color_gain, config.camera_processing, color_gain);
-    _CWIPC_CONFIG_JSON_PUT(system_data, color_powerline_frequency, config.camera_processing, color_powerline_frequency);
-    _CWIPC_CONFIG_JSON_PUT(system_data, map_color_to_depth, config.camera_processing, map_color_to_depth);
-
-    json skeleton;
-    _CWIPC_CONFIG_JSON_PUT(skeleton, sensor_orientation, config, bt_sensor_orientation);
-    _CWIPC_CONFIG_JSON_PUT(skeleton, processing_mode, config, bt_processing_mode);
-    _CWIPC_CONFIG_JSON_PUT(skeleton, model_path, config, bt_model_path);
-
-    json_data["skeleton"] = skeleton;
-    json_data["system"] = system_data;
 }
 
 bool OrbbecCaptureConfig::from_file(const char *filename, std::string typeWanted) {
@@ -133,8 +145,8 @@ bool OrbbecCaptureConfig::from_file(const char *filename, std::string typeWanted
     int version = 0;
     json_data.at("version").get_to(version);
 
-    if (version != 3) {
-      cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + " ignored, is not version 3");
+    if (version != 5) {
+      cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + " ignored, is not version 5");
       return false;
     }
 
@@ -164,7 +176,7 @@ bool OrbbecCaptureConfig::from_string(const char *jsonBuffer, std::string typeWa
     int version = 0;
     json_data.at("version").get_to(version);
 
-    if (version != 3) {
+    if (version != 5) {
       cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + "(inline buffer) " + "ignored, is not version 3");
       return false;
     }
@@ -186,9 +198,9 @@ bool OrbbecCaptureConfig::from_string(const char *jsonBuffer, std::string typeWa
   return true;
 }
 
-std::string OrbbecCaptureConfig::to_string() {
+std::string OrbbecCaptureConfig::to_string(bool for_recording) {
   json result;
-  _to_json(result);
+  _to_json(result, for_recording);
 
-  return result.dump();
+  return result.dump(2);
 }

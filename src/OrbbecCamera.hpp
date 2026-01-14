@@ -10,7 +10,7 @@ class OrbbecCamera : public OrbbecBaseCamera<std::shared_ptr<ob::Device>> {
     OrbbecCamera& operator=(const OrbbecCamera&);
 
 public:
-    OrbbecCamera(Type_api_camera camera, OrbbecCaptureConfig& config, int cameraIndex, OrbbecCameraConfig& cameraConfig);
+    OrbbecCamera(Type_api_camera camera, OrbbecCaptureConfig& config, int cameraIndex);
 
     virtual ~OrbbecCamera() {
     }
@@ -20,7 +20,7 @@ public:
     virtual void start_camera_streaming() override;
     // pre_stop_camera() defined in base class
     void stop_camera() override;
-    bool capture_frameset();
+    virtual uint64_t wait_for_captured_frameset(uint64_t minimum_timestamp) override final;
 
 protected:
     virtual bool _init_hardware_for_this_camera() override final;

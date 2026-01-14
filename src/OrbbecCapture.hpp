@@ -18,7 +18,6 @@ protected:
   OrbbecCapture();
 
   virtual bool _capture_all_cameras(uint64_t& timestamp) override final;
-  virtual uint64_t _get_best_timestamp() override final;
 
 public:
   static int countDevices();
