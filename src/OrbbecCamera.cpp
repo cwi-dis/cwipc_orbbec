@@ -14,8 +14,17 @@ bool OrbbecCamera::start_camera() {
   assert(!camera_started);
   assert(camera_processing_thread == nullptr);
   auto config = std::make_shared<ob::Config>();
-  _init_config_for_this_camera(config);
-  camera_pipeline.start();
+  if (!_init_config_for_this_camera(config)) {
+    return false;
+  }
+
+  try {
+    camera_pipeline.start(config);
+  } catch(ob::Error& e) {
+    _log_error(std::string("pipeline.start error: ") + e.what());
+    return false;
+  }
+
   _post_start_this_camera();
   // xxxjack _computePointSize()??
   camera_started = true;
@@ -75,9 +84,14 @@ bool OrbbecCamera::_init_hardware_for_this_camera() {
 }
 
 bool OrbbecCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> config) {
-  config->enableVideoStream(OB_STREAM_COLOR, hardware.color_width, hardware.color_height, OB_FORMAT_BGRA);
-  config->enableVideoStream(OB_STREAM_DEPTH, hardware.depth_width, hardware.depth_height, OB_FORMAT_Y16);
-  return true;
+  try {
+    config->enableVideoStream(OB_STREAM_COLOR, hardware.color_width, hardware.color_height, hardware.fps, OB_FORMAT_BGRA);
+    config->enableVideoStream(OB_STREAM_DEPTH, hardware.depth_width, hardware.depth_height, hardware.fps, OB_FORMAT_Y16);
+  } catch(ob::Error& e) {
+    _log_error(std::string("enableVideoStream error: ") + e.what());
+    return false;
+  }
+    return true;
 }
 
 void OrbbecCamera::start_camera_streaming() {
@@ -93,11 +107,16 @@ uint64_t OrbbecCamera::wait_for_captured_frameset(uint64_t minimum_timestamp) {
   do {
     current_captured_frameset = camera_pipeline.waitForFrameset();
     std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
+    if (depth_frame == nullptr) {
+      _log_warning("drop frameset without depth frame");
+      return 0;
+    }
     resultant_timestamp = depth_frame->getTimeStampUs();
     if (resultant_timestamp < minimum_timestamp) {
       _log_trace("drop frame with dts=" + std::to_string(resultant_timestamp));
     }
   } while (resultant_timestamp < minimum_timestamp);
+  _log_debug("wait_for_captured_frameset: dts=" + std::to_string(resultant_timestamp));
   return resultant_timestamp;
 }
 

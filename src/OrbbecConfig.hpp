@@ -1,5 +1,6 @@
 #pragma once
-
+#define CWIPC_DEBUG
+#define CWIPC_DEBUG_THREAD
 #include <thread>
 #include "libobsensor/hpp/Device.hpp"
 
@@ -50,7 +51,8 @@ struct OrbbecCaptureSyncConfig {
 };
 
 struct OrbbecCaptureAuxDataConfig {
-
+    bool want_auxdata_rgb = false;
+    bool want_auxdata_depth = false;
 };
 struct OrbbecCaptureConfig : public CwipcBaseCaptureConfig {
     OrbbecCaptureProcessingConfig processing;

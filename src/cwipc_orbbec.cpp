@@ -35,12 +35,38 @@ public:
     using cwipc_capturer_impl_base<GrabberClass, CameraConfigClass>::cwipc_capturer_impl_base;
 
     virtual void request_auxiliary_data(const std::string &name) override {
-        cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", "request_auxiliary_data not implemented");
+        cwipc_tiledsource::request_auxiliary_data(name);
+        this->m_grabber->request_auxiliary_data(
+            cwipc_tiledsource::auxiliary_data_requested("rgb"), 
+            cwipc_tiledsource::auxiliary_data_requested("depth"), 
+            false,
+            false
+        );
     }
 
     virtual bool auxiliary_operation(const std::string op, const void* inbuf, size_t insize, void* outbuf, size_t outsize) override {
-        cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", "auxiliary_operation not implemented");
-        return false;
+        if (op == "map2d3d") {
+            if (inbuf == nullptr || insize != 4*sizeof(float)) return false;
+            if (outbuf == nullptr || outsize != 3*sizeof(float)) return false;
+            float *infloat = (float *)inbuf;
+            float *outfloat = (float *)outbuf;
+            int tilenum = (int)infloat[0];
+            int x_2d = (int)infloat[1];
+            int y_2d = (int)infloat[2];
+            float d_2d = infloat[3];
+
+            return this->m_grabber->map2d3d(tilenum, x_2d, y_2d, d_2d, outfloat);
+        } else if (op == "mapcolordepth") {
+            if (inbuf == nullptr || insize != 3*sizeof(int)) return false;
+            if (outbuf == nullptr || outsize != 2*sizeof(int)) return false;
+            int *inint = (int *)inbuf;
+            int *outint = (int *)outbuf;
+
+            return this->m_grabber->mapcolordepth(inint[0], inint[1], inint[2], outint);
+
+        } else {
+            return false;
+        }
     }
     
     virtual bool seek(uint64_t timestamp) override {

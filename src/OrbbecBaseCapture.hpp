@@ -7,6 +7,8 @@
 #include <fstream>
 #include <pcl/common/transforms.h>
 
+#define CWIPC_DEBUG
+#define CWIPC_DEBUG_THREAD
 #include "cwipc_util/capturers.hpp"
 #include "OrbbecConfig.hpp"
 
@@ -83,18 +85,14 @@ public:
 
     /// Tell the capturer that each point cloud should also include RGB and/or D images and/or RGB/D capture timestamps.
     virtual void request_auxiliary_data(bool rgb, bool depth, bool timestamps, bool skeleton) override final {
-#ifdef xxxjack_notyet
       configuration.auxData.want_auxdata_rgb = rgb;
       configuration.auxData.want_auxdata_depth = depth;
-      configuration.auxData.want_auxdata_timestamps = timestamps;
-#endif
     }
 
     virtual bool pointcloud_available(bool wait) override final {
         if (!is_valid() == 0) {
             return false;
         }
-#ifdef xxxjack_implement_me
         _request_new_pointcloud();
         std::this_thread::yield();
         std::unique_lock<std::mutex> mylock(mergedPC_mutex);
@@ -105,10 +103,6 @@ public:
         });
 
         return mergedPC_is_fresh;
-#else
-        // XXX IMPLEMENT ME
-        return false;
-#endif
     }
 
     virtual cwipc* get_pointcloud() override final {
@@ -116,7 +110,6 @@ public:
           _log_warning("get_pointcloud: returning NULL, no cameras");
           return nullptr;
         }
-#ifdef xxxjack_implement_me
         _request_new_pointcloud();
         // Wait for a fresh mergedPC to become available.
         // Note we keep the return value while holding the lock, so we can start the next grab/process/merge cycle before returning.
@@ -141,10 +134,6 @@ public:
 
         _request_new_pointcloud();
         return rv;
-#else
-        // XXX IMPLEMENT ME
-        return nullptr;
-#endif
     }
 
     virtual float get_pointSize() override final {
@@ -169,13 +158,11 @@ public:
 
     virtual bool map2d3d(int tile, int x_2d, int y_2d, int d_2d, float* out3d) override final
     {
-#ifdef xxxjack_notyet
         for (auto cam : cameras) {
             if (tile == (1 << cam->camera_index)) {
                 return cam->map2d3d(x_2d, y_2d, d_2d, out3d);
             }
         }
-#endif
         return false;
     }
     
@@ -197,7 +184,10 @@ public:
 protected:
   /// Load configuration from file or string.
   virtual bool _apply_config(const char* configFilename) override final {
-    // xxxjack keep configuration.auxData
+    // Clear out old configuration but keep auxData.
+    OrbbecCaptureConfig newConfiguration;
+    newConfiguration.auxData = configuration.auxData;
+    configuration = newConfiguration;
     if (configFilename == 0 || *configFilename == '\0') {
       configFilename = "cameraconfig.json";
     }
@@ -359,7 +349,6 @@ protected:
   void _control_thread_main() {
     _log_debug_thread("processing thread started");
     _initial_camera_synchronization();
-    // XXX IMPLEMENT ME
     while (!stopped) {
       {
         std::unique_lock<std::mutex> mylock(mergedPC_mutex);
@@ -404,12 +393,10 @@ protected:
       cwipc* newPC = cwipc_from_pcl(pcl_pointcloud, timestamp, nullptr, CWIPC_API_VERSION);
 
 
-#ifdef xxxjack_notyet
       for (auto cam : cameras) {
           cam->save_frameset_auxdata(newPC);
       }
 
-#endif
       if (stopped) {
           break;
       }

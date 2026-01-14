@@ -78,12 +78,12 @@ int main(int argc, char** argv) {
             ok = -1;
             break;
         }
-
         if (pc->count() <= 0) {
             std::cerr << argv[0] << ": warning: empty pointcloud, grabbing again" << std::endl;
             pc->free();
             continue;
         }
+        std::cerr << argv[0] << ": got pc with " << std::to_string(pc->count()) << " points" << std::endl;
 
 #ifdef DEBUG_AUXDATA
         cwipc_auxiliary_data* ap = pc->access_auxiliary_data();
