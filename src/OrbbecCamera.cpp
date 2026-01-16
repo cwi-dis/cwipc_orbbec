@@ -121,13 +121,13 @@ uint64_t OrbbecCamera::wait_for_captured_frameset(uint64_t minimum_timestamp) {
   if (camera_stopped) return 0;
   uint64_t resultant_timestamp = 0;
   do {
+    waiting_for_capture = true;
     current_captured_frameset = camera_pipeline.waitForFrameset();
     if (current_captured_frameset == nullptr) return 0;
     std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
     if (depth_frame == nullptr) {
-      _log_warning("drop frameset without depth frame");
-      current_captured_frameset = nullptr;
-      return 0;
+      _log_warning("frameset without depth frame: " + std::to_string(current_captured_frameset->getIndex()));
+      return 1; // xxxjack is this a good idea?
     }
     resultant_timestamp = depth_frame->getTimeStampUs();
     if (resultant_timestamp < minimum_timestamp) {

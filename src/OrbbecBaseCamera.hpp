@@ -151,13 +151,18 @@ protected:
             //
             // Get the frameset we need to turn into a point cloud
             ///
-            std::shared_ptr<ob::FrameSet> processing_frameset = camera_pipeline.waitForFrameset();
-            if (processing_frameset == nullptr) {
-                _log_warning("processing thread dequeue timeout");
+            std::shared_ptr<ob::FrameSet> processing_frameset;
+            bool ok = processing_frame_queue.wait_dequeue_timed(processing_frameset, std::chrono::milliseconds(10000));
+            if (!ok) {
+                if (waiting_for_capture) _log_warning("processing thread dequeue timeout");
                 continue;
             }
-
-            if(debug) _log_debug_thread("processing thread got frameset");
+            waiting_for_capture = false;
+            if (processing_frameset == nullptr) {
+                if (!camera_stopped) _log_error("processing thread dequeue produced NULL pointer");
+                break;
+            }
+            if (debug) _log_debug_thread("processing thread got frameset");
             assert(processing_frameset);
             
             std::lock_guard<std::mutex> lock(processing_mutex);
@@ -174,8 +179,19 @@ protected:
             // get depth and color images. Apply filters and uncompress color image if needed
             //
             std::shared_ptr<ob::Frame> depth_frame = processing_frameset->getFrame(OB_FRAME_DEPTH);
+            if (depth_frame == nullptr) {
+                _log_warning("empty point cloud, missing depth frame in frameset " + std::to_string(processing_frameset->getIndex()));
+                current_pcl_pointcloud = new_cwipc_pcl_pointcloud();
+                processing_done = true;
+                processing_done_cv.notify_one();
+                continue;
+            }
             std::shared_ptr<ob::DepthFrame> depth_image = depth_frame->as<ob::DepthFrame>();
             std::shared_ptr<ob::Frame> color_frame = processing_frameset->getFrame(OB_FRAME_COLOR);
+            if (color_frame == nullptr) {
+                _log_warning("missing color frame in frameset " + std::to_string(processing_frameset->getIndex()));
+                continue;
+            }
             std::shared_ptr<ob::ColorFrame> color_image = color_frame->as<ob::ColorFrame>();
             if (debug) _log_debug(std::string("Processing frame:") +
                     " depth: " + std::to_string(depth_image->getWidth()) + "x" + std::to_string(depth_image->getHeight()) +
@@ -247,6 +263,7 @@ protected:
   moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;
   moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> processing_frame_queue;
   std::shared_ptr<ob::FrameSet> current_captured_frameset;
+bool waiting_for_capture = false;           //< Boolean to stop issuing warning messages while paused.
   bool camera_sync_ismaster;
   bool camera_sync_inuse;
   std::mutex processing_mutex;  //<! Exclusive lock for frame to pointcloud processing.

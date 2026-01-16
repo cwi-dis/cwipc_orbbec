@@ -7,8 +7,8 @@
 #include "cwipc_util/api.h"
 #include "cwipc_orbbec/api.h"
 
-#define DEBUG_AUXDATA
-#define DEBUG_CONFIG
+#undef DEBUG_AUXDATA
+#undef DEBUG_CONFIG
 
 int main(int argc, char** argv) {
     if (argc < 3) {
