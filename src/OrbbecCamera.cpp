@@ -13,6 +13,7 @@ bool OrbbecCamera::start_camera() {
   assert(camera_stopped);
   assert(!camera_started);
   assert(camera_processing_thread == nullptr);
+  if (debug) _log_debug("Starting pipeline");
   auto config = std::make_shared<ob::Config>();
   if (!_init_config_for_this_camera(config)) {
     return false;
@@ -36,7 +37,21 @@ void OrbbecCamera::_post_start_this_camera() {
 }
 
 void OrbbecCamera::stop_camera() {
-  camera_pipeline.stop();
+  if (debug) _log_debug("stop camera");
+  camera_stopped = true;
+  // xxxjack realsense clears out processing_frame_queue...
+  if (camera_processing_thread) {
+    camera_processing_thread->join();
+  }
+  delete camera_processing_thread;
+  camera_processing_thread = nullptr;
+
+  if (camera_started) {
+    camera_pipeline.stop();
+  }
+  processing_done = true;
+  processing_done_cv.notify_one();
+  if (debug) _log_debug("camera stopped");
 }
 
 bool OrbbecCamera::_init_hardware_for_this_camera() {
@@ -87,6 +102,7 @@ bool OrbbecCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> conf
   try {
     config->enableVideoStream(OB_STREAM_COLOR, hardware.color_width, hardware.color_height, hardware.fps, OB_FORMAT_BGRA);
     config->enableVideoStream(OB_STREAM_DEPTH, hardware.depth_width, hardware.depth_height, hardware.fps, OB_FORMAT_Y16);
+    config->setAlignMode(ALIGN_D2C_HW_MODE);
   } catch(ob::Error& e) {
     _log_error(std::string("enableVideoStream error: ") + e.what());
     return false;
@@ -106,9 +122,11 @@ uint64_t OrbbecCamera::wait_for_captured_frameset(uint64_t minimum_timestamp) {
   uint64_t resultant_timestamp = 0;
   do {
     current_captured_frameset = camera_pipeline.waitForFrameset();
+    if (current_captured_frameset == nullptr) return 0;
     std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
     if (depth_frame == nullptr) {
       _log_warning("drop frameset without depth frame");
+      current_captured_frameset = nullptr;
       return 0;
     }
     resultant_timestamp = depth_frame->getTimeStampUs();
@@ -116,7 +134,7 @@ uint64_t OrbbecCamera::wait_for_captured_frameset(uint64_t minimum_timestamp) {
       _log_trace("drop frame with dts=" + std::to_string(resultant_timestamp));
     }
   } while (resultant_timestamp < minimum_timestamp);
-  _log_debug("wait_for_captured_frameset: dts=" + std::to_string(resultant_timestamp));
+  if (debug) _log_debug("wait_for_captured_frameset: dts=" + std::to_string(resultant_timestamp));
   return resultant_timestamp;
 }
 

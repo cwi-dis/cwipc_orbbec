@@ -30,7 +30,8 @@ public:
       captured_frame_queue(1),
       processing_frame_queue(1),
       camera_sync_inuse(configuration.sync.sync_master_serial != ""),
-      current_captured_frameset(nullptr)
+      current_captured_frameset(nullptr),
+      debug(_configuration.debug)
       
   {
   }
@@ -145,49 +146,53 @@ protected:
     }
 
     void _processing_thread_main() {
-#if 0
-        _log_debug_thread("frame processing thread started for camera " + serial);
+        if(debug) _log_debug_thread("frame processing thread started");
         while (!camera_stopped) {
             //
             // Get the frameset we need to turn into a point cloud
             ///
-            k4a_capture_t processing_frameset = NULL;
-            bool ok = processing_frame_queue.wait_dequeue_timed(processing_frameset, std::chrono::milliseconds(10000));
-
-            if (!ok) {
+            std::shared_ptr<ob::FrameSet> processing_frameset = camera_pipeline.waitForFrameset();
+            if (processing_frameset == nullptr) {
                 _log_warning("processing thread dequeue timeout");
                 continue;
             }
 
-            _log_debug_thread("processing thread got frameset for camera " + serial);
+            if(debug) _log_debug_thread("processing thread got frameset");
             assert(processing_frameset);
             
             std::lock_guard<std::mutex> lock(processing_mutex);
+#if 0
             //
             // use body tracker for skeleton extraction
             //
             if (tracker_handle) {
                 _feed_frameset_to_tracker(processing_frameset);
             }
+#endif
+            // xxxjack current_processed_frameset = processing_frameset;
             //
             // get depth and color images. Apply filters and uncompress color image if needed
             //
-            k4a_image_t depth_image = k4a_capture_get_depth_image(processing_frameset);
-            k4a_image_t color_image = k4a_capture_get_color_image(processing_frameset);
+            std::shared_ptr<ob::Frame> depth_frame = processing_frameset->getFrame(OB_FRAME_DEPTH);
+            std::shared_ptr<ob::DepthFrame> depth_image = depth_frame->as<ob::DepthFrame>();
+            std::shared_ptr<ob::Frame> color_frame = processing_frameset->getFrame(OB_FRAME_COLOR);
+            std::shared_ptr<ob::ColorFrame> color_image = color_frame->as<ob::ColorFrame>();
+            if (debug) _log_debug(std::string("Processing frame:") +
+                    " depth: " + std::to_string(depth_image->getWidth()) + "x" + std::to_string(depth_image->getHeight()) +
+                    " color: " + std::to_string(color_image->getWidth()) + "x" + std::to_string(color_image->getHeight()));
             //
             // Do processing on the images (filtering, decompressing)
             //
+#if 0
+            // xxxjack to do
             _apply_filters_to_depth_image(depth_image); //filtering depthmap => better now because if we map depth to color then we need to filter more points.
             color_image = _uncompress_color_image(processing_frameset, color_image);
+#endif
             //  
             // generate pointcloud
             //
             cwipc_pcl_pointcloud new_pointcloud = nullptr;
-            if (filtering.map_color_to_depth) {
-                new_pointcloud = _generate_point_cloud_color_to_depth(depth_image, color_image);
-            } else {
-                new_pointcloud = _generate_point_cloud_depth_to_color(depth_image, color_image);
-            }
+            new_pointcloud = _generate_point_cloud(processing_frameset);
 
             if (new_pointcloud != nullptr) {
                 current_pcl_pointcloud = new_pointcloud;
@@ -204,20 +209,18 @@ protected:
                 processing_done_cv.notify_one();
             }
             //
-            // Release resources no longer needed.
+            // No cleanup needed, orbbec API handles it.
             //
-            if (depth_image) {
-                k4a_image_release(depth_image);
-            }
-            if (color_image) {
-                k4a_image_release(color_image);
-            }
-            if (processing_frameset) {
-                k4a_capture_release(processing_frameset);
-            }
         }
-#endif
-        _log_debug_thread("processing thread exiting");
+        if (debug)_log_debug_thread("processing thread exiting");
+    }
+
+    cwipc_pcl_pointcloud _generate_point_cloud(std::shared_ptr<ob::FrameSet> frameset) {
+        cwipc_pcl_pointcloud pcl_pointcloud = new_cwipc_pcl_pointcloud();
+        auto pointcloud_filter = std::make_shared<ob::PointCloudFilter>();
+        pointcloud_filter->setCreatePointFormat(OB_FORMAT_RGB_POINT);
+        auto pointcloud_frame = pointcloud_filter->process(frameset);
+        return pcl_pointcloud;
     }
 public:
   float pointSize = 0;
@@ -249,7 +252,7 @@ protected:
   std::mutex processing_mutex;  //<! Exclusive lock for frame to pointcloud processing.
   std::condition_variable processing_done_cv; //<! Condition variable signalling pointcloud ready
   bool processing_done = false;
-
+  bool debug = true;
   std::string record_to_file;
 
 };

@@ -297,6 +297,7 @@ protected:
   }
 
   virtual void _unload_cameras() override final {
+    if (cameras.empty()) return;
     _stop_cameras();
 
     for (auto cam : cameras) {
@@ -304,10 +305,11 @@ protected:
     }
 
     cameras.clear();
-    _log_debug("deleted all cameras");
+    if(configuration.debug) _log_debug("deleted all cameras");
   }
 
   virtual void _stop_cameras() override final {
+    if (configuration.debug) _log_debug_thread("stopping control thread");
     stopped = true;
     mergedPC_is_fresh = true;
     mergedPC_want_new = false;
@@ -323,13 +325,17 @@ protected:
 
     delete control_thread;
     control_thread = 0;
+    if (configuration.debug) _log_debug_thread("stopped control thread");
 
+    if (configuration.debug) _log_debug("stopping all cameras");
     for (auto cam : cameras) {
       cam->stop_camera();
     }
 
     mergedPC_is_fresh = false;
     mergedPC_want_new = false;
+    _post_stop_all_cameras();
+    if (configuration.debug) _log_debug("post-stopped");
   }
 
     /// Create the cameraconfig file for the recording, if needed.
@@ -347,7 +353,7 @@ protected:
 protected:
 
   void _control_thread_main() {
-    _log_debug_thread("processing thread started");
+    if (configuration.debug) _log_debug("control thread started");
     _initial_camera_synchronization();
     while (!stopped) {
       {
@@ -438,7 +444,7 @@ protected:
       _merge_camera_pointclouds();
 
       if (mergedPC->access_pcl_pointcloud()->size() > 0) {
-          _log_debug("merged pointcloud has  " + std::to_string(mergedPC->access_pcl_pointcloud()->size()) + " points");
+          if(configuration.debug) _log_debug("merged pointcloud has  " + std::to_string(mergedPC->access_pcl_pointcloud()->size()) + " points");
       } else {
           _log_warning("merged pointcloud is empty");
       }
@@ -447,7 +453,7 @@ protected:
       mergedPC_want_new = false;
       mergedPC_is_fresh_cv.notify_all();
     }
-    if (configuration.debug) _log_debug_thread("processing thread exiting");
+    if (configuration.debug) _log_debug_thread("control thread exiting");
   }
 
   virtual bool _capture_all_cameras(uint64_t& timestamp) = 0;
