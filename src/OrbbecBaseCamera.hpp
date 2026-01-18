@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "libobsensor/h/ObTypes.h"
 #include "libobsensor/hpp/Frame.hpp"
 #include "libobsensor/hpp/Pipeline.hpp"
 #include "readerwriterqueue.h"
@@ -217,8 +218,8 @@ protected:
             }
             std::shared_ptr<ob::ColorFrame> color_image = color_frame->as<ob::ColorFrame>();
             if (debug) _log_debug(std::string("Processing frame:") +
-                    " depth: " + std::to_string(depth_image->getWidth()) + "x" + std::to_string(depth_image->getHeight()) +
-                    " color: " + std::to_string(color_image->getWidth()) + "x" + std::to_string(color_image->getHeight()));
+                    " depth: " + std::to_string(depth_frame->getIndex()) +":" + std::to_string(depth_image->getWidth()) + "x" + std::to_string(depth_image->getHeight()) +
+                    " color: " + std::to_string(color_frame->getIndex()) +":"  + std::to_string(color_image->getWidth()) + "x" + std::to_string(color_image->getHeight()));
             //
             // Do processing on the images (filtering, decompressing)
             //
@@ -262,7 +263,31 @@ protected:
         cwipc_pcl_pointcloud pcl_pointcloud = new_cwipc_pcl_pointcloud();
         auto pointcloud_filter = std::make_shared<ob::PointCloudFilter>();
         pointcloud_filter->setCreatePointFormat(OB_FORMAT_RGB_POINT);
-        auto pointcloud_frame = pointcloud_filter->process(frameset);
+        std::shared_ptr<ob::Frame> pointcloud_frame = pointcloud_filter->process(frameset);
+        std::shared_ptr<ob::PointsFrame> points_frame = pointcloud_frame->as<ob::PointsFrame>();
+        auto format = points_frame->getFormat();
+        if (format != OB_FORMAT_RGB_POINT) {
+            _log_warning("_generate_point_cloud: format is not OB_FORMAT_RGB_POINT");
+            return pcl_pointcloud;
+        }
+        uint32_t width  = points_frame->getWidth();
+        uint32_t height = points_frame->getHeight();
+
+        pcl_pointcloud->reserve(width*height);
+        OBColorPoint* points = reinterpret_cast<OBColorPoint *>(points_frame->getData());
+        for (int idx = 0; idx < width*height; idx++) {
+            OBColorPoint *obpt = points + idx;
+            cwipc_pcl_point pt(obpt->x, obpt->y, obpt->z);
+            if (pt.z == 0) continue;
+            // xxxjack transform to world
+            // xxxjack height filtering
+            // xxxjack radius filtering
+            pt.r = (uint8_t)(obpt->r*255);
+            pt.g = (uint8_t)(obpt->g*255);
+            pt.b = (uint8_t)(obpt->b*255);
+            // xxxjack green screen removal
+            pcl_pointcloud->push_back(pt);
+        }
         return pcl_pointcloud;
     }
 public:

@@ -18,7 +18,7 @@ bool OrbbecCamera::start_camera() {
     if (!_init_config_for_this_camera(config)) {
         return false;
     }
-
+    camera_pipeline.enableFrameSync();
     try {
         camera_pipeline.start(config);
     } catch(ob::Error& e) {
@@ -102,6 +102,8 @@ bool OrbbecCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> conf
     try {
         config->enableVideoStream(OB_STREAM_COLOR, hardware.color_width, hardware.color_height, hardware.fps, OB_FORMAT_BGRA);
         config->enableVideoStream(OB_STREAM_DEPTH, hardware.depth_width, hardware.depth_height, hardware.fps, OB_FORMAT_Y16);
+        config->setFrameAggregateOutputMode(OB_FRAME_AGGREGATE_OUTPUT_ALL_TYPE_FRAME_REQUIRE);
+        // xxxjack this is really only for depth2color mode.
         config->setAlignMode(ALIGN_D2C_HW_MODE);
     } catch(ob::Error& e) {
         _log_error(std::string("enableVideoStream error: ") + e.what());
