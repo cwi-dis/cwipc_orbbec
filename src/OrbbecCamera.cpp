@@ -117,26 +117,6 @@ void OrbbecCamera::start_camera_streaming() {
   _start_processing_thread();
 }
 
-uint64_t OrbbecCamera::wait_for_captured_frameset(uint64_t minimum_timestamp) {
-  if (camera_stopped) return 0;
-  uint64_t resultant_timestamp = 0;
-  do {
-    waiting_for_capture = true;
-    current_captured_frameset = camera_pipeline.waitForFrameset();
-    if (current_captured_frameset == nullptr) return 0;
-    std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
-    if (depth_frame == nullptr) {
-      _log_warning("frameset without depth frame: " + std::to_string(current_captured_frameset->getIndex()));
-      return 1; // xxxjack is this a good idea?
-    }
-    resultant_timestamp = depth_frame->getTimeStampUs();
-    if (resultant_timestamp < minimum_timestamp) {
-      _log_trace("drop frame with dts=" + std::to_string(resultant_timestamp));
-    }
-  } while (resultant_timestamp < minimum_timestamp);
-  if (debug) _log_debug("wait_for_captured_frameset: dts=" + std::to_string(resultant_timestamp));
-  return resultant_timestamp;
-}
 
 void OrbbecCamera::_start_capture_thread() {
 }

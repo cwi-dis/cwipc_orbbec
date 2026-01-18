@@ -17,8 +17,6 @@ class OrbbecCapture : public OrbbecBaseCapture<std::shared_ptr<ob::Device>, Orbb
 protected:
   OrbbecCapture();
 
-  virtual bool _capture_all_cameras(uint64_t& timestamp) override final;
-
 public:
   static int countDevices();
 

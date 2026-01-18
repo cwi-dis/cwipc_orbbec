@@ -20,7 +20,6 @@ public:
     virtual void start_camera_streaming() override;
     // pre_stop_camera() defined in base class
     void stop_camera() override;
-    virtual uint64_t wait_for_captured_frameset(uint64_t minimum_timestamp) override final;
 
 protected:
     bool _init_config_for_this_camera(std::shared_ptr<ob::Config> config);
