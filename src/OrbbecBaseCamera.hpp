@@ -167,6 +167,7 @@ protected:
     void _processing_thread_main() {
         if(debug) _log_debug_thread("frame processing thread started");
         while (!camera_stopped) {
+            _log_debug_thread("11. wait for processing_frame_queue");
             //
             // Get the frameset we need to turn into a point cloud
             ///
@@ -183,7 +184,7 @@ protected:
             }
             if (debug) _log_debug_thread("processing thread got frameset");
             assert(processing_frameset);
-            
+            _log_debug_thread("12. Lock processing_mutex");
             std::lock_guard<std::mutex> lock(processing_mutex);
 #if 0
             //
@@ -209,6 +210,9 @@ protected:
             std::shared_ptr<ob::Frame> color_frame = processing_frameset->getFrame(OB_FRAME_COLOR);
             if (color_frame == nullptr) {
                 _log_warning("missing color frame in frameset " + std::to_string(processing_frameset->getIndex()));
+                current_pcl_pointcloud = new_cwipc_pcl_pointcloud();
+                processing_done = true;
+                processing_done_cv.notify_one();
                 continue;
             }
             std::shared_ptr<ob::ColorFrame> color_image = color_frame->as<ob::ColorFrame>();
@@ -226,6 +230,7 @@ protected:
             //  
             // generate pointcloud
             //
+            _log_debug_thread("13. _generate_pointcloud()");
             cwipc_pcl_pointcloud new_pointcloud = nullptr;
             new_pointcloud = _generate_point_cloud(processing_frameset);
 
@@ -242,6 +247,9 @@ protected:
                 //
                 processing_done = true;
                 processing_done_cv.notify_one();
+                _log_debug_thread("14. notified processing_done_cv");
+            } else {
+                _log_warning("_generate_point_cloud() returned NULL");
             }
             //
             // No cleanup needed, orbbec API handles it.

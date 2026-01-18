@@ -354,7 +354,7 @@ protected:
         if (configuration.debug) _log_debug("control thread started");
         _initial_camera_synchronization();
         while (!stopped) {
-
+            _log_debug_thread("1. wait for mergedPC_want_new");
             {
                 std::unique_lock<std::mutex> mylock(mergedPC_mutex);
                 mergedPC_want_new_cv.wait(mylock, [this] { return mergedPC_want_new; });
@@ -371,7 +371,7 @@ protected:
             if (stopped) {
                 break;
             }
-
+            _log_debug_thread("2. capture_all_cameras()");
             assert(cameras.size() > 0);
             // Step one: grab frames from all cameras. This should happen as close together in time as possible,
             // because that gives use he biggest chance we have the same frame (or at most off-by-one) for each
@@ -391,7 +391,7 @@ protected:
             if (configuration.new_timestamps) {
                 timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             }
-
+            _log_debug_thread("3. create new pointcloud");
             // Step 2 - Create pointcloud, and save rgb/depth images if wanted
             if (configuration.debug) _log_debug("creating pc with ts=" + std::to_string(timestamp));
             cwipc_pcl_pointcloud pcl_pointcloud = new_cwipc_pcl_pointcloud();
@@ -405,7 +405,7 @@ protected:
             if (stopped) {
                 break;
             }
-
+            _log_debug_thread("4. all cameras->process_pointcloud_from_frameset()");
             // Step 3: start processing frames to pointclouds, for each camera
             for (auto cam : cameras) {
                 cam->process_pointcloud_from_frameset();
@@ -414,7 +414,7 @@ protected:
             if (stopped) {
                 break;
             }
-
+            _log_debug_thread("5. wait  for mergedpc_mutex");
             // Lock mergedPC already while we are waiting for the per-camera
             // processing threads. This so the main thread doesn't go off and do
             // useless things if it is calling available(true).
@@ -429,7 +429,7 @@ protected:
             }
 
             mergedPC = newPC;
-
+            _log_debug_thread("6. all cameras->wait_for_pointcloud_processed()");
             // Step 4: wait for frame processing to complete.
             for (auto cam : cameras) {
                 cam->wait_for_pointcloud_processed();
@@ -438,7 +438,7 @@ protected:
             if (stopped) {
                 break;
             }
-
+            _log_debug_thread("7. merge_camera_pointclouds()");
             // Step 5: merge views
             _merge_camera_pointclouds();
 
@@ -447,6 +447,7 @@ protected:
             } else {
                 _log_warning("merged pointcloud is empty");
             }
+            _log_debug_thread("8. notify merged_pc_is_fresh. All done.");
             // Signal that a new mergedPC is available. (Note that we acquired the mutex earlier)
             mergedPC_is_fresh = true;
             mergedPC_want_new = false;
