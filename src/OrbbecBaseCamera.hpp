@@ -15,40 +15,39 @@ class OrbbecBaseCamera : public CwipcBaseCamera {
 
 public:
     OrbbecBaseCamera(const std::string& _Classname, Type_api_camera _handle, OrbbecCaptureConfig& _configuration, int _camera_index)
-    : CwipcBaseCamera(_Classname + ": " + _configuration.all_camera_configs[_camera_index].serial, "orbbec"),
-      camera_index(_camera_index),
-      configuration(_configuration),
-      serial(_configuration.all_camera_configs[_camera_index].serial),
-      camera_sync_ismaster(serial == configuration.sync.sync_master_serial),
-      camera_stopped(true),
-      camera_config(_configuration.all_camera_configs[_camera_index]),
-      filtering(_configuration.filtering),
-      processing(_configuration.processing),
-      hardware(_configuration.hardware),
-      auxData(_configuration.auxData),
-      camera_pipeline(_handle),
-      captured_frame_queue(1),
-      processing_frame_queue(1),
-      camera_sync_inuse(configuration.sync.sync_master_serial != ""),
-      current_captured_frameset(nullptr),
-      debug(_configuration.debug)
-      
-  {
-  }
+    :   CwipcBaseCamera(_Classname + ": " + _configuration.all_camera_configs[_camera_index].serial, "orbbec"),
+        camera_index(_camera_index),
+        configuration(_configuration),
+        serial(_configuration.all_camera_configs[_camera_index].serial),
+        camera_sync_ismaster(serial == configuration.sync.sync_master_serial),
+        camera_stopped(true),
+        camera_config(_configuration.all_camera_configs[_camera_index]),
+        filtering(_configuration.filtering),
+        processing(_configuration.processing),
+        hardware(_configuration.hardware),
+        auxData(_configuration.auxData),
+        camera_pipeline(_handle),
+        captured_frame_queue(1),
+        processing_frame_queue(1),
+        camera_sync_inuse(configuration.sync.sync_master_serial != ""),
+        current_captured_frameset(nullptr),
+        debug(_configuration.debug)    
+    {
+    }
 
     virtual ~OrbbecBaseCamera() {
-      // xxxjack implement proper stopping and cleanup
+        // xxxjack implement proper stopping and cleanup
     }
 
     /// Step 1 in starting: tell the camera we are going to start. Called for all cameras.
     virtual bool pre_start_all_cameras() final { 
-      if (!_init_filters()) {
-          return false;
-      }
-      if (!_init_hardware_for_this_camera()) {
-          return false;
-      }
-      return true;
+        if (!_init_filters()) {
+            return false;
+        }
+        if (!_init_hardware_for_this_camera()) {
+            return false;
+        }
+        return true;
     }
     /// Step 2 in starting: starts the camera. Called for all cameras. 
     virtual bool start_camera() override = 0;
@@ -65,16 +64,16 @@ public:
 
 
     virtual bool is_sync_master() override final {
-      return camera_sync_ismaster;
+        return camera_sync_ismaster;
     }
 
     virtual bool mapcolordepth(int x_c, int y_c, int* out2d) override final {
-      // xxxjack to be implemented
-      return false;
+        // xxxjack to be implemented
+        return false;
     }
     virtual bool map2d3d(int x_2d, int y_2d, int d_2d, float* out3d) override final {
-      // xxxjack to be implemented
-      return false;
+        // xxxjack to be implemented
+        return false;
     }
     /// Get current camera hardware parameters.
     /// xxxjack to be overridden for real cameras.
@@ -115,13 +114,13 @@ public:
     }
     /// Step 2: Forward the current_captured_frameset to the processing thread to turn it into a point cloud.
     virtual void process_pointcloud_from_frameset() final {
-      assert(current_captured_frameset && current_captured_frameset.getImpl());
+        assert(current_captured_frameset && current_captured_frameset.getImpl());
 
-      if (!processing_frame_queue.try_enqueue(current_captured_frameset)) {
-          _log_warning("processing_frame_queue full, dropping frame");
-          // xxxjack it seems Orbbec does this automatically. k4a_capture_release(current_captured_frameset);
-      }
-      current_captured_frameset = nullptr;
+        if (!processing_frame_queue.try_enqueue(current_captured_frameset)) {
+            _log_warning("processing_frame_queue full, dropping frame");
+            // xxxjack it seems Orbbec does this automatically. k4a_capture_release(current_captured_frameset);
+        }
+        current_captured_frameset = nullptr;
     }
     /// Step 3: Wait for the point cloud processing.
     /// After this, current_pcl_pointcloud and current_processed_frameset will be valid.
@@ -136,7 +135,7 @@ public:
     cwipc_pcl_pointcloud access_current_pcl_pointcloud() { return current_pcl_pointcloud; }
     /// Step 5: Save auxdata from frameset into given cwipc object.
     void save_frameset_auxdata(cwipc *pc) {
-      // xxxjack to be implemented
+        // xxxjack to be implemented
     }
 
 protected:
@@ -146,17 +145,17 @@ protected:
     virtual bool _init_hardware_for_this_camera() override = 0;
     /// Initialize any filters that will be applied to all RGB/D images.
     virtual bool _init_filters() override final {
-      // Orbbec API does not provide any filtering that needs to be initialized.
-      return true;
+        // Orbbec API does not provide any filtering that needs to be initialized.
+        return true;
     }
     /// Apply filter to a frameset.
     virtual bool _init_skeleton_tracker() override final { 
-      // Body tracker not supported for Orbbec
-      return true; 
+        // Body tracker not supported for Orbbec
+        return true; 
     }
 
     virtual void _apply_filters() final {
-      // xxxjack to be implemented, maybe
+        // xxxjack to be implemented, maybe
     }
     virtual void _start_capture_thread() = 0;
     virtual void _capture_thread_main() = 0;
@@ -259,37 +258,37 @@ protected:
         return pcl_pointcloud;
     }
 public:
-  float pointSize = 0;
-  std::string serial;
-  bool end_of_stream_reached = false;
-  int camera_index;
+    float pointSize = 0;
+    std::string serial;
+    bool end_of_stream_reached = false;
+    int camera_index;
 
 protected:
-  OrbbecCaptureConfig configuration;
-  OrbbecCameraConfig& camera_config;
-  OrbbecCaptureProcessingConfig& processing;
-  OrbbecCameraProcessingParameters& filtering;
-  OrbbecCameraHardwareConfig& hardware;
-  OrbbecCaptureAuxDataConfig& auxData; //<! Auxiliary data configuration
+    OrbbecCaptureConfig configuration;
+    OrbbecCameraConfig& camera_config;
+    OrbbecCaptureProcessingConfig& processing;
+    OrbbecCameraProcessingParameters& filtering;
+    OrbbecCameraHardwareConfig& hardware;
+    OrbbecCaptureAuxDataConfig& auxData; //<! Auxiliary data configuration
 
-  ob::Pipeline camera_pipeline;
-  bool camera_started = false;
-  bool camera_stopped = true;
-  std::thread *camera_capturer_thread;
-  std::thread* camera_processing_thread = nullptr; //<! Handle for thread that runs processing loop
-  cwipc_pcl_pointcloud current_pcl_pointcloud = nullptr;  //<! Most recent grabbed pointcloud
-  // xxxjack k4a_transformation_t transformation_handle = nullptr; //<! k4a structure describing relationship between RGB and D cameras
+    ob::Pipeline camera_pipeline;
+    bool camera_started = false;
+    bool camera_stopped = true;
+    std::thread *camera_capturer_thread;
+    std::thread* camera_processing_thread = nullptr; //<! Handle for thread that runs processing loop
+    cwipc_pcl_pointcloud current_pcl_pointcloud = nullptr;  //<! Most recent grabbed pointcloud
+    // xxxjack k4a_transformation_t transformation_handle = nullptr; //<! k4a structure describing relationship between RGB and D cameras
 
-  moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;
-  moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> processing_frame_queue;
-  std::shared_ptr<ob::FrameSet> current_captured_frameset;
-bool waiting_for_capture = false;           //< Boolean to stop issuing warning messages while paused.
-  bool camera_sync_ismaster;
-  bool camera_sync_inuse;
-  std::mutex processing_mutex;  //<! Exclusive lock for frame to pointcloud processing.
-  std::condition_variable processing_done_cv; //<! Condition variable signalling pointcloud ready
-  bool processing_done = false;
-  bool debug = true;
-  std::string record_to_file;
+    moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;
+    moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> processing_frame_queue;
+    std::shared_ptr<ob::FrameSet> current_captured_frameset;
+    bool waiting_for_capture = false;           //< Boolean to stop issuing warning messages while paused.
+    bool camera_sync_ismaster;
+    bool camera_sync_inuse;
+    std::mutex processing_mutex;  //<! Exclusive lock for frame to pointcloud processing.
+    std::condition_variable processing_done_cv; //<! Condition variable signalling pointcloud ready
+    bool processing_done = false;
+    bool debug = true;
+    std::string record_to_file;
 
 };
