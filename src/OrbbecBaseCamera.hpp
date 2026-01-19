@@ -136,7 +136,40 @@ public:
     cwipc_pcl_pointcloud access_current_pcl_pointcloud() { return current_pcl_pointcloud; }
     /// Step 5: Save auxdata from frameset into given cwipc object.
     void save_frameset_auxdata(cwipc *pc) {
-        // xxxjack to be implemented
+        if (current_captured_frameset == nullptr) {
+            _log_error("save_frameset_auxdata: current_captured_frameset is NULL");
+            return;
+        }
+        if (auxData.want_auxdata_depth || auxData.want_auxdata_rgb) {
+            std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
+            std::shared_ptr<ob::Frame> color_frame = current_captured_frameset->getFrame(OB_FRAME_COLOR);
+            if (depth_frame == nullptr || color_frame == nullptr) {
+                _log_error("Failed to get depth frame or color frame from capture for auxiliary data");
+                return;
+            }
+            if (depth_frame->format() != OB_FORMAT_Z16) {
+                _log_error("Depth frame is not OB_FORMAT_Z16: " + std::to_string(depth_frame->format()));
+                return;
+            }
+            if (color_frame->format() != OB_FORMAT_BGRA) {
+                _log_error("Color frame is not OB_FORMAT_BGRA: " + std::to_string(color_frame->format()));
+                return;
+            }
+            std::shared_ptr<ob::DepthFrame> depth_image = depth_frame->as<ob::DepthFrame>();
+            std::shared_ptr<ob::ColorFrame> color_image = color_frame->as<ob::ColorFrame>();
+            int color_image_width_pixels = color_image->getWidth();
+            int color_image_height_pixels = color_image->getHeight();
+            int depth_image_width_pixels = depth_image->getWidth();
+            int depth_image_height_pixels = depth_image->getHeight();
+            if (auxData.want_auxdata_rgb) {
+                std::string name = "rgb." + serial;
+#if 0
+                color_image = _uncompress_color_image(current_captured_frameset, color_image);
+#endif
+            }
+            _log_error("save_frameset_auxdata not fully implemented yet");
+
+        }
     }
 
 protected:
