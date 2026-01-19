@@ -7,7 +7,7 @@
 #include "cwipc_util/api.h"
 #include "cwipc_orbbec/api.h"
 
-#undef DEBUG_AUXDATA
+#define DEBUG_AUXDATA
 #undef DEBUG_CONFIG
 
 int main(int argc, char** argv) {
@@ -49,7 +49,6 @@ int main(int argc, char** argv) {
 #ifdef DEBUG_AUXDATA
     generator->request_auxiliary_data("rgb");
     generator->request_auxiliary_data("depth");
-    generator->request_auxiliary_data("skeleton");
 #endif
 
 #ifdef DEBUG_CONFIG

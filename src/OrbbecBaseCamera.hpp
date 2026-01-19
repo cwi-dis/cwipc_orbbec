@@ -144,15 +144,17 @@ public:
             std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
             std::shared_ptr<ob::Frame> color_frame = current_captured_frameset->getFrame(OB_FRAME_COLOR);
             if (depth_frame == nullptr || color_frame == nullptr) {
-                _log_error("Failed to get depth frame or color frame from capture for auxiliary data");
+                _log_error("save_frameset_auxdata: Failed to get depth frame or color frame from capture for auxiliary data");
                 return;
             }
-            if (depth_frame->format() != OB_FORMAT_Z16) {
-                _log_error("Depth frame is not OB_FORMAT_Z16: " + std::to_string(depth_frame->format()));
+            OBFormat depth_format = depth_frame->format();
+            OBFormat color_format = color_frame->format();
+            if (depth_format != OB_FORMAT_Y16) {
+                _log_error("save_frameset_auxdata: Depth frame is not OB_FORMAT_Y16: " + std::to_string(depth_frame->format()));
                 return;
             }
-            if (color_frame->format() != OB_FORMAT_BGRA) {
-                _log_error("Color frame is not OB_FORMAT_BGRA: " + std::to_string(color_frame->format()));
+            if (color_format != OB_FORMAT_BGRA) {
+                _log_error("save_frameset_auxdata: Color frame is not OB_FORMAT_BGRA: " + std::to_string(color_frame->format()));
                 return;
             }
             std::shared_ptr<ob::DepthFrame> depth_image = depth_frame->as<ob::DepthFrame>();
@@ -166,9 +168,43 @@ public:
 #if 0
                 color_image = _uncompress_color_image(current_captured_frameset, color_image);
 #endif
+                int bpp=4;
+                int stride = color_image_width_pixels*bpp;
+                size_t size = color_image_height_pixels * color_image_width_pixels * bpp;
+                std::string description = 
+                    "width="+std::to_string(color_image_width_pixels)+
+                    ",height="+std::to_string(color_image_height_pixels)+
+                    ",stride="+std::to_string(stride)+
+                    ",bpp="+std::to_string(bpp)+
+                    ",format="+"BGRA";
+                void *pointer = malloc(size);
+                if (pointer) {
+                    memcpy(pointer, color_image->getData(), size);
+                    cwipc_auxiliary_data* ap = pc->access_auxiliary_data();
+                    ap->_add(name, description, pointer, size, ::free);
+                }
             }
-            _log_error("save_frameset_auxdata not fully implemented yet");
-
+            if (auxData.want_auxdata_depth) {
+                std::string name = "depth." + serial;
+#if 0
+                // xxxjack map_color_to_depth??
+#endif
+                int bpp=2;
+                int stride = depth_image_width_pixels*bpp;
+                size_t size = depth_image_height_pixels * depth_image_width_pixels * bpp;
+                std::string description = 
+                    "width="+std::to_string(depth_image_width_pixels)+
+                    ",height="+std::to_string(depth_image_height_pixels)+
+                    ",stride="+std::to_string(stride)+
+                    ",bpp="+std::to_string(bpp)+
+                    ",format="+"Z16";
+                void *pointer = malloc(size);
+                if (pointer) {
+                    memcpy(pointer, depth_image->getData(), size);
+                    cwipc_auxiliary_data* ap = pc->access_auxiliary_data();
+                    ap->_add(name, description, pointer, size, ::free);
+                }
+            }
         }
     }
 
