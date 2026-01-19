@@ -277,7 +277,7 @@ protected:
         OBColorPoint* points = reinterpret_cast<OBColorPoint *>(points_frame->getData());
         for (int idx = 0; idx < width*height; idx++) {
             OBColorPoint *obpt = points + idx;
-            cwipc_pcl_point pt(obpt->x, obpt->y, obpt->z);
+            cwipc_pcl_point pt(obpt->x / 1000.0, obpt->y / 1000.0, obpt->z / 1000.0);
             if (pt.z == 0) continue;
             // xxxjack transform to world
             // xxxjack height filtering
