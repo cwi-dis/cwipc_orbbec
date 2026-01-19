@@ -208,7 +208,8 @@ protected:
             std::shared_ptr<ob::FrameSet> processing_frameset;
             bool ok = processing_frame_queue.wait_dequeue_timed(processing_frameset, std::chrono::milliseconds(10000));
             if (!ok) {
-                if (waiting_for_capture) _log_warning("processing thread dequeue timeout");
+                if (true || waiting_for_capture) _log_warning("processing thread dequeue timeout");
+                std::this_thread::yield();
                 continue;
             }
             waiting_for_capture = false;

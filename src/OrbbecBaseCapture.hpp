@@ -90,18 +90,19 @@ public:
     }
 
     virtual bool pointcloud_available(bool wait) override final {
-        if (!is_valid() == 0) {
+        if (!is_valid()) {
+            _log_warning("pointcloud_available() called but not valid()");
             return false;
         }
         _request_new_pointcloud();
         std::this_thread::yield();
+        _log_debug_thread("02. available: wait for fresh");
         std::unique_lock<std::mutex> mylock(mergedPC_mutex);
         auto duration = std::chrono::seconds(wait ? 1 : 0);
-
         mergedPC_is_fresh_cv.wait_for(mylock, duration, [this] {
             return mergedPC_is_fresh;
         });
-
+        _log_debug_thread("03. available: wait for fresh returned " + std::to_string(mergedPC_is_fresh));
         return mergedPC_is_fresh;
     }
 
@@ -116,10 +117,12 @@ public:
         cwipc* rv;
 
         {
+            _log_debug_thread("02. get_pointcloud: wait for fresh");
             std::unique_lock<std::mutex> mylock(mergedPC_mutex);
             mergedPC_is_fresh_cv.wait(mylock, [this] {
                 return mergedPC_is_fresh;
             });
+            _log_debug_thread("03. get_pointcloud: wait for fresh returned " + std::to_string(mergedPC_is_fresh));
 
             assert(mergedPC_is_fresh);
             mergedPC_is_fresh = false;
@@ -189,20 +192,20 @@ protected:
         newConfiguration.auxData = configuration.auxData;
         configuration = newConfiguration;
         if (configFilename == 0 || *configFilename == '\0') {
-        configFilename = "cameraconfig.json";
+            configFilename = "cameraconfig.json";
         }
 
         if (strcmp(configFilename, "auto") == 0) {
-        return _apply_auto_config();
+            return _apply_auto_config();
         }
 
         if (configFilename[0] == '{') {
-        return configuration.from_string(configFilename, type);
+            return configuration.from_string(configFilename, type);
         }
 
         const char* extension = strrchr(configFilename, '.');
         if (extension != 0 && strcmp(extension, ".json") == 0) {
-        return configuration.from_file(configFilename, type);
+            return configuration.from_file(configFilename, type);
         }
 
         return false;
@@ -484,6 +487,7 @@ protected:
         std::unique_lock<std::mutex> mylock(mergedPC_mutex);
 
         if (!mergedPC_want_new && !mergedPC_is_fresh) {
+            _log_debug_thread("00. request new pointcloud");
             mergedPC_want_new = true;
             mergedPC_want_new_cv.notify_all();
         }
