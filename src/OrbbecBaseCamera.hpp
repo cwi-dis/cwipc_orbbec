@@ -390,19 +390,30 @@ protected:
 
         pcl_pointcloud->reserve(width*height);
         OBColorPoint* points = reinterpret_cast<OBColorPoint *>(points_frame->getData());
+        float height_min = processing.height_min;
+        float height_max = processing.height_max;
+        bool do_height_filtering = height_min < height_max;
+        bool do_greenscreen_removal = processing.greenscreen_removal;
+        bool do_radius_filtering = processing.radius_filter > 0;
         for (int idx = 0; idx < width*height; idx++) {
             OBColorPoint *obpt = points + idx;
             cwipc_pcl_point pt(obpt->x / 1000.0, obpt->y / 1000.0, obpt->z / 1000.0);
             if (pt.z == 0) continue;
             _transform_point_cam_to_world(pt);
-            // xxxjack height filtering
-            // xxxjack radius filtering
+            if (do_height_filtering && (pt.y < height_min || pt.y > height_max)) {
+                continue;
+            }
+            if (do_radius_filtering && !isPointInRadius(pt, processing.radius_filter)) {
+                continue;
+            }
             // xxxjack NOTE: the color names in OBColorPoint seem to be mixed up.
             pt.r = (uint8_t)(obpt->b);
             pt.g = (uint8_t)(obpt->g);
             pt.b = (uint8_t)(obpt->r);
             pt.a = (uint8_t)(1 << camera_index);
-            // xxxjack green screen removal
+            if (do_greenscreen_removal && !isNotGreen(&pt)) {
+                continue;
+            }
             pcl_pointcloud->push_back(pt);
         }
         return pcl_pointcloud;
