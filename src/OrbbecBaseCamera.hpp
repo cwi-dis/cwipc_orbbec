@@ -10,7 +10,6 @@
 
 #include "cwipc_util/capturers.hpp"
 #include "OrbbecConfig.hpp"
-typedef void *xxxjack_dont_know_yet;
 template<typename Type_api_camera> 
 class OrbbecBaseCamera : public CwipcBaseCamera {
 
@@ -38,7 +37,6 @@ public:
     }
 
     virtual ~OrbbecBaseCamera() {
-        // xxxjack implement proper stopping and cleanup
     }
 
     /// Step 1 in starting: tell the camera we are going to start. Called for all cameras.
@@ -93,10 +91,12 @@ public:
     }
 
     virtual bool mapcolordepth(int x_c, int y_c, int* out2d) override final {
-        // xxxjack to be implemented
-        _log_warning("mapcolordepth not implemented, x="+std::to_string(x_c)+",y="+std::to_string(y_c));
-        return false;
+        // Orbbec (like Kinect) uses the same coordinates for color and depth images.
+        out2d[0] = x_c;
+        out2d[1] = y_c;
+        return true;
     }
+
     virtual bool map2d3d(int x_2d, int y_2d, int d_2d, float* out3d) override final {
         if (current_processed_frameset == nullptr) {
             _log_error("map2d3d: current_processed_frameset is NULL");
@@ -146,6 +146,7 @@ public:
     virtual void get_camera_hardware_parameters(OrbbecCameraHardwareConfig& output) {
         output = hardware;
     }
+
     /// Return true if current hardware parameters of this camera match input.
     bool match_camera_hardware_parameters(OrbbecCameraHardwareConfig& input) {
         return (
@@ -184,7 +185,7 @@ public:
 
         if (!processing_frame_queue.try_enqueue(current_captured_frameset)) {
             _log_warning("processing_frame_queue full, dropping frame");
-            // xxxjack it seems Orbbec does this automatically. k4a_capture_release(current_captured_frameset);
+            // Orbbec releases the current_captured_frameset automatically.
         }
         current_captured_frameset = nullptr;
     }
@@ -276,7 +277,6 @@ public:
 protected:
     // internal API that is "shared" with other implementations (realsense, kinect)
     /// Initialize any hardware settings for this camera.
-    /// Also see xxxjack
     virtual bool _init_hardware_for_this_camera() override = 0;
     /// Initialize any filters that will be applied to all RGB/D images.
     virtual bool _init_filters() override final {
@@ -330,7 +330,6 @@ protected:
                 _feed_frameset_to_tracker(processing_frameset);
             }
 #endif
-            // xxxjack current_processed_frameset = processing_frameset;
             //
             // get depth and color images. Apply filters and uncompress color image if needed
             //
@@ -471,7 +470,6 @@ protected:
     std::thread *camera_capturer_thread;
     std::thread* camera_processing_thread = nullptr; //<! Handle for thread that runs processing loop
     cwipc_pcl_pointcloud current_pcl_pointcloud = nullptr;  //<! Most recent grabbed pointcloud
-    // xxxjack k4a_transformation_t transformation_handle = nullptr; //<! k4a structure describing relationship between RGB and D cameras
 
     moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;
     moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> processing_frame_queue;
@@ -485,5 +483,6 @@ protected:
     bool processing_done = false;
     bool debug = false;
     std::string record_to_file;
+    bool uses_recorder = false;
 
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "libobsensor/hpp/Device.hpp"
+#include "libobsensor/hpp/RecordPlayback.hpp"
 #include "OrbbecBaseCamera.hpp"
 
 class OrbbecCamera : public OrbbecBaseCamera<std::shared_ptr<ob::Device>> {
@@ -23,8 +24,12 @@ public:
 
 protected:
     bool _init_config_for_this_camera(std::shared_ptr<ob::Config> config);
+    bool _start_recorder();
+    void _stop_recorder();
     void _post_start_this_camera();
     virtual bool _init_hardware_for_this_camera() override final;
     virtual void _start_capture_thread() override;
     virtual void _capture_thread_main() override;
+protected:
+    std::shared_ptr<ob::RecordDevice> recording_device = nullptr;
 };

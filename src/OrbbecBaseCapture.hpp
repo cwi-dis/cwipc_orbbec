@@ -49,7 +49,6 @@ public:
         // Initialize hardware capture setting (for all cameras)
         //
         if (!_init_hardware_for_all_cameras()) {
-            // xxxjack we should really close all cameras too...
             camera_config_count = 0;
             return false;
         }
@@ -173,7 +172,6 @@ public:
     virtual bool mapcolordepth(int tile, int u, int v, int* out2d) override final
     {
         // For Kinect the RGB and D images have the same coordinate system.
-        // xxxjack check this is true for Orbbec too.
         out2d[0] = u;
         out2d[1] = v;
         return true;

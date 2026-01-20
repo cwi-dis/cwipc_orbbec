@@ -5,7 +5,7 @@ OrbbecCamera::OrbbecCamera(std::shared_ptr<ob::Device> camera, OrbbecCaptureConf
 : OrbbecBaseCamera("cwipc_orbbec: OrbbecCamera", camera, config, cameraIndex)
 {
     if (config.record_to_directory != "") {
-        record_to_file = config.record_to_directory + "/" + camera_config.serial + ".mkv";
+        record_to_file = config.record_to_directory + "/" + camera_config.serial + ".bag";
     }
 }
 
@@ -18,7 +18,6 @@ bool OrbbecCamera::start_camera() {
     if (!_init_config_for_this_camera(config)) {
         return false;
     }
-    camera_pipeline.enableFrameSync();
     try {
         camera_pipeline.start(config);
     } catch(ob::Error& e) {
@@ -82,6 +81,13 @@ bool OrbbecCamera::_init_hardware_for_this_camera() {
 }
 
 bool OrbbecCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> config) {
+    std::shared_ptr<ob::Device> device = camera_pipeline.getDevice();
+    // Ensure device clock is synchronized with host clock.
+    device->timerSyncWithHost();
+    // Ensure frames are synchronized
+    camera_pipeline.enableFrameSync();
+    // Set a flag if we want to record.
+    uses_recorder = record_to_file != "";
     try {
         config->enableVideoStream(OB_STREAM_COLOR, hardware.color_width, hardware.color_height, hardware.fps, OB_FORMAT_BGRA);
         config->enableVideoStream(OB_STREAM_DEPTH, hardware.depth_width, hardware.depth_height, hardware.fps, OB_FORMAT_Y16);
@@ -92,7 +98,24 @@ bool OrbbecCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> conf
         _log_error(std::string("enableVideoStream error: ") + e.what());
         return false;
     }
+    return _start_recorder();
+}
+
+bool OrbbecCamera::_start_recorder() {
+    if (!uses_recorder) return true;
+    std::shared_ptr<ob::Device> device = camera_pipeline.getDevice();
+    _log_trace("enabling recorder to " + record_to_file);
+    recording_device = std::make_shared<ob::RecordDevice>(device, record_to_file);
+    if (recording_device == nullptr) {
+        _log_error("Recorder failed for file: " + record_to_file);
+        uses_recorder = false;
+        return false;
+    }
     return true;
+}
+
+void OrbbecCamera::_stop_recorder() {
+    recording_device = nullptr;
 }
 
 void OrbbecCamera::start_camera_streaming() {
