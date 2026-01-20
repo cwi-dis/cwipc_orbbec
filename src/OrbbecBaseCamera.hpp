@@ -105,13 +105,16 @@ public:
             _log_error(std::string("map2d3d: ob_error: ")+ob_error_get_message(error));
             return false;
         }
-        result.x /= 1000.0;
-        result.y /= 1000.0;
-        result.z /= 1000.0;
-        out3d[0] = result.x;
-        out3d[1] = result.y;
-        out3d[2] = result.z;
-        _log_debug("map2d3d: result x="+std::to_string(result.x) + ",y="+std::to_string(result.y)+",z="+std::to_string(result.z));
+        cwipc_pcl_point pt = {
+            (float)(result.x/1000.0),
+            (float)(result.y/1000.0),
+            (float)(result.z/1000.0),
+            0, 0, 0, 0};
+        _log_debug("map2d3d: result x="+std::to_string(pt.x) + ",y="+std::to_string(pt.y)+",z="+std::to_string(pt.z));
+        _transform_point_cam_to_world(pt);
+        out3d[0] = pt.x;
+        out3d[1] = pt.y;
+        out3d[2] = pt.z;
         return true;
     }
 
