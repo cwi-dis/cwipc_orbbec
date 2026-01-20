@@ -394,9 +394,10 @@ protected:
             _transform_point_cam_to_world(pt);
             // xxxjack height filtering
             // xxxjack radius filtering
-            pt.r = (uint8_t)(obpt->r*255);
-            pt.g = (uint8_t)(obpt->g*255);
-            pt.b = (uint8_t)(obpt->b*255);
+            // xxxjack NOTE: the color names in OBColorPoint seem to be mixed up.
+            pt.r = (uint8_t)(obpt->b);
+            pt.g = (uint8_t)(obpt->g);
+            pt.b = (uint8_t)(obpt->r);
             pt.a = (uint8_t)(1 << camera_index);
             // xxxjack green screen removal
             pcl_pointcloud->push_back(pt);
