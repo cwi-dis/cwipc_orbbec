@@ -92,6 +92,7 @@ public:
     virtual bool pointcloud_available(bool wait) override final {
         if (!is_valid()) {
             _log_warning("pointcloud_available() called but not valid()");
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             return false;
         }
         _request_new_pointcloud();
