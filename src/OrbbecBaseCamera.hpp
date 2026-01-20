@@ -105,6 +105,8 @@ public:
             _log_error(std::string("map2d3d: ob_error: ")+ob_error_get_message(error));
             return false;
         }
+        result.x /= 1000.0;
+        result.y /= 1000.0;
         result.z /= 1000.0;
         out3d[0] = result.x;
         out3d[1] = result.y;
@@ -389,7 +391,7 @@ protected:
             OBColorPoint *obpt = points + idx;
             cwipc_pcl_point pt(obpt->x / 1000.0, obpt->y / 1000.0, obpt->z / 1000.0);
             if (pt.z == 0) continue;
-            // xxxjack transform to world
+            _transform_point_cam_to_world(pt);
             // xxxjack height filtering
             // xxxjack radius filtering
             pt.r = (uint8_t)(obpt->r*255);
@@ -401,6 +403,16 @@ protected:
         }
         return pcl_pointcloud;
     }
+
+    void _transform_point_cam_to_world(cwipc_pcl_point& pt) {
+    float x = (*camera_config.trafo)(0,0)*pt.x + (*camera_config.trafo)(0,1)*pt.y + (*camera_config.trafo)(0,2)*pt.z + (*camera_config.trafo)(0,3);
+    float y = (*camera_config.trafo)(1,0)*pt.x + (*camera_config.trafo)(1,1)*pt.y + (*camera_config.trafo)(1,2)*pt.z + (*camera_config.trafo)(1,3);
+    float z = (*camera_config.trafo)(2,0)*pt.x + (*camera_config.trafo)(2,1)*pt.y + (*camera_config.trafo)(2,2)*pt.z + (*camera_config.trafo)(2,3);
+    pt.x = x;
+    pt.y = y;
+    pt.z = z;
+}
+
 public:
     float pointSize = 0;
     std::string serial;
