@@ -62,8 +62,31 @@ public:
     virtual void pre_stop_camera() override final {
       
     }
-    virtual void stop_camera() override = 0;
 
+    virtual void stop_camera() final {
+        if (debug) _log_debug("stop camera");
+        camera_stopped = true;
+        // clear out processing_frame_queue...
+        while(true) {
+            std::shared_ptr<ob::FrameSet> dummy;
+            if (!processing_frame_queue.try_dequeue(dummy)) break;
+        }
+        // push nullptr to ensure wakeup of processing_thread
+        processing_frame_queue.try_enqueue(nullptr);
+        // join it.
+        if (camera_processing_thread) {
+            camera_processing_thread->join();
+        }
+        delete camera_processing_thread;
+        camera_processing_thread = nullptr;
+
+        if (camera_started) {
+            camera_pipeline.stop();
+        }
+        processing_done = true;
+        processing_done_cv.notify_one();
+        if (debug) _log_debug("camera stopped");
+    }
 
     virtual bool is_sync_master() override final {
         return camera_sync_ismaster;

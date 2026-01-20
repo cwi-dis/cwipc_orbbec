@@ -19,7 +19,7 @@ public:
     bool start_camera() override;
     virtual void start_camera_streaming() override;
     // pre_stop_camera() defined in base class
-    void stop_camera() override;
+    // stop_camera() defined in base class.
 
 protected:
     bool _init_config_for_this_camera(std::shared_ptr<ob::Config> config);

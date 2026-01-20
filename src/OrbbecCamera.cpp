@@ -36,23 +36,6 @@ void OrbbecCamera::_post_start_this_camera() {
     // XXX Implement me
 }
 
-void OrbbecCamera::stop_camera() {
-    if (debug) _log_debug("stop camera");
-    camera_stopped = true;
-    // xxxjack realsense clears out processing_frame_queue...
-    if (camera_processing_thread) {
-        camera_processing_thread->join();
-    }
-    delete camera_processing_thread;
-    camera_processing_thread = nullptr;
-
-    if (camera_started) {
-        camera_pipeline.stop();
-    }
-    processing_done = true;
-    processing_done_cv.notify_one();
-    if (debug) _log_debug("camera stopped");
-}
 
 bool OrbbecCamera::_init_hardware_for_this_camera() {
     auto camera_handle = camera_pipeline.getDevice();
