@@ -5,6 +5,7 @@
 #include "libobsensor/h/ObTypes.h"
 #include "libobsensor/hpp/Frame.hpp"
 #include "libobsensor/hpp/Pipeline.hpp"
+#include "libobsensor/hpp/Utils.hpp"
 #include "readerwriterqueue.h"
 
 #include "cwipc_util/capturers.hpp"
@@ -74,10 +75,43 @@ public:
         return false;
     }
     virtual bool map2d3d(int x_2d, int y_2d, int d_2d, float* out3d) override final {
-        // xxxjack to be implemented
-        _log_warning("map2d3d not implemented, x="+std::to_string(x_2d)+",y="+std::to_string(y_2d)+",d="+std::to_string(d_2d));
-        return false;
+        if (current_captured_frameset == nullptr) {
+            _log_error("map2d3d: current_captured_frameset is NULL");
+            return false;
+        }
+        std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
+        if (depth_frame == nullptr) {
+            _log_error("map2d3d: missing depth frame");
+            return false;
+        }
+        std::shared_ptr<ob::StreamProfile> depth_profile = depth_frame->getStreamProfile();
+        if (depth_profile == nullptr) {
+            _log_error("map2d3d: missing depth profile");
+            return false;
+        }
+        std::shared_ptr<ob::VideoStreamProfile> depth_video_profile = depth_profile->as<ob::VideoStreamProfile>();
+        if (depth_video_profile == nullptr) {
+            _log_error("map2d3d: depth profile wrong type");
+            return false;
+        }
+        OBCameraIntrinsic depth_intrinsic = depth_video_profile->getIntrinsic();
+        OBExtrinsic depth_extrinsic = depth_video_profile->getExtrinsicTo(depth_video_profile);
+        OBPoint2f point {(float)x_2d, (float)y_2d};
+        float depth = d_2d;
+        OBPoint3f result;
+        ob_error *error;
+        bool ok = ob_transformation_2d_to_3d(point, depth, depth_intrinsic, depth_extrinsic, &result, &error);
+        if (!ok) {
+            _log_error(std::string("map2d3d: ob_error: ")+ob_error_get_message(error));
+            return false;
+        }
+        out3d[0] = result.x;
+        out3d[1] = result.y;
+        out3d[2] = result.z;
+        _log_debug("map2d3d: result x="+std::to_string(result.x) + ",y="+std::to_string(result.y)+",z="+std::to_string(result.z));
+        return true;
     }
+
     /// Get current camera hardware parameters.
     /// xxxjack to be overridden for real cameras.
     virtual void get_camera_hardware_parameters(OrbbecCameraHardwareConfig& output) {
