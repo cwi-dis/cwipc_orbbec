@@ -22,15 +22,15 @@ struct OrbbecCameraHardwareConfig {
     int color_height = 720;                     // height of color frame (720, 1080 and various other values allowed, see kinect docs)
     int depth_width = 640;                // width of depth frame (288, 576, 512 and 1024 allowed)
     int depth_height = 576;                // height of depth frame (288, 576, 512 and 1024 allowed)
-    int fps = 30;                         // capture fps (5, 15 and 30 allowed)
-    int32_t color_exposure_time = -1;     // default for manual: 40000;
-    int32_t color_whitebalance = -1;   // default for manual: 3160; range(2500-12500)
-    int32_t color_backlight_compensation = 0;     // default for manual: 0;
-    int32_t color_brightness = 128;        // default for manual: 128;
-    int32_t color_contrast = 5;          // default for manual: 5;
-    int32_t color_saturation = 32;        // default for manual: 32;
-    int32_t color_sharpness = 2;         // default for manual: 2;
-    int32_t color_gain = 0;              // default for manual: 100;
+    int fps = 15;                         // capture fps (5, 15 and 30 allowed)
+    int32_t color_exposure_time = -200;     // default for manual: 200, auto;
+    int32_t color_whitebalance = -6500;   // default for manual: 6500, auto;
+    int32_t color_backlight_compensation = 0;     // Not implemented?
+    int32_t color_brightness = 0;        // default for manual: 0;
+    int32_t color_contrast = 32;          // default for manual: 32;
+    int32_t color_saturation = 54;        // default for manual: 54;
+    int32_t color_sharpness = 6;         // default for manual: 6;
+    int32_t color_gain = 60;              // default for manual: 60;
     int32_t color_powerline_frequency = 2;     // default for manual: 2;
 
 };
@@ -65,7 +65,7 @@ struct OrbbecCaptureConfig : public CwipcBaseCaptureConfig {
     OrbbecCameraProcessingParameters camera_processing;
     std::string record_to_directory = ""; // If non-empty all camera streams will be recorded to this directory.
     bool new_timestamps = false; // If true new timestamps are generated (otherwise original timestamps from capture time)
-    bool debug = true;
+    bool debug = false;
     // We could probably also allow overriding GPU id and model path, but no need for now.
     // per camera data
     std::vector<OrbbecCameraConfig> all_camera_configs;

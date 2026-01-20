@@ -108,6 +108,7 @@ void OrbbecCaptureConfig::_to_json(json& json_data, bool for_recording) {
     _CWIPC_CONFIG_JSON_PUT(hardware_data, fps, hardware, fps);
     _CWIPC_CONFIG_JSON_PUT(hardware_data, color_exposure_time, hardware, color_exposure_time);
     _CWIPC_CONFIG_JSON_PUT(hardware_data, color_whitebalance, hardware, color_whitebalance);
+    _CWIPC_CONFIG_JSON_PUT(hardware_data, color_backlight_compensation, hardware, color_backlight_compensation);
     _CWIPC_CONFIG_JSON_PUT(hardware_data, color_brightness, hardware, color_brightness);
     _CWIPC_CONFIG_JSON_PUT(hardware_data, color_contrast, hardware, color_contrast);
     _CWIPC_CONFIG_JSON_PUT(hardware_data, color_saturation, hardware, color_saturation);
