@@ -70,10 +70,12 @@ public:
 
     virtual bool mapcolordepth(int x_c, int y_c, int* out2d) override final {
         // xxxjack to be implemented
+        _log_warning("mapcolordepth not implemented, x="+std::to_string(x_c)+",y="+std::to_string(y_c));
         return false;
     }
     virtual bool map2d3d(int x_2d, int y_2d, int d_2d, float* out3d) override final {
         // xxxjack to be implemented
+        _log_warning("map2d3d not implemented, x="+std::to_string(x_2d)+",y="+std::to_string(y_2d)+",d="+std::to_string(d_2d));
         return false;
     }
     /// Get current camera hardware parameters.
@@ -237,14 +239,14 @@ protected:
     void _processing_thread_main() {
         if(debug) _log_debug_thread("frame processing thread started");
         while (!camera_stopped) {
-            _log_debug_thread("11. wait for processing_frame_queue");
+            if (debug) _log_debug_thread("11. wait for processing_frame_queue");
             //
             // Get the frameset we need to turn into a point cloud
             ///
             std::shared_ptr<ob::FrameSet> processing_frameset;
             bool ok = processing_frame_queue.wait_dequeue_timed(processing_frameset, std::chrono::milliseconds(10000));
             if (!ok) {
-                if (true || waiting_for_capture) _log_warning("processing thread dequeue timeout");
+                if (waiting_for_capture) _log_warning("processing thread dequeue timeout");
                 std::this_thread::yield();
                 continue;
             }
@@ -255,7 +257,7 @@ protected:
             }
             if (debug) _log_debug_thread("processing thread got frameset");
             assert(processing_frameset);
-            _log_debug_thread("12. Lock processing_mutex");
+            if (debug) _log_debug_thread("12. Lock processing_mutex");
             std::lock_guard<std::mutex> lock(processing_mutex);
 #if 0
             //
@@ -301,13 +303,13 @@ protected:
             //  
             // generate pointcloud
             //
-            _log_debug_thread("13. _generate_pointcloud()");
+            if (debug) _log_debug_thread("13. _generate_pointcloud()");
             cwipc_pcl_pointcloud new_pointcloud = nullptr;
             new_pointcloud = _generate_point_cloud(processing_frameset);
 
             if (new_pointcloud != nullptr) {
                 current_pcl_pointcloud = new_pointcloud;
-                _log_debug_thread("generated pointcloud with " + std::to_string(current_pcl_pointcloud->size()) + " points");
+                if (debug) _log_debug_thread("generated pointcloud with " + std::to_string(current_pcl_pointcloud->size()) + " points");
 
                 if (current_pcl_pointcloud->size() == 0) {
                     _log_warning("Captured empty pointcloud from camera");
@@ -318,7 +320,7 @@ protected:
                 //
                 processing_done = true;
                 processing_done_cv.notify_one();
-                _log_debug_thread("14. notified processing_done_cv");
+                if (debug) _log_debug_thread("14. notified processing_done_cv");
             } else {
                 _log_warning("_generate_point_cloud() returned NULL");
             }
@@ -355,6 +357,7 @@ protected:
             pt.r = (uint8_t)(obpt->r*255);
             pt.g = (uint8_t)(obpt->g*255);
             pt.b = (uint8_t)(obpt->b*255);
+            pt.a = (uint8_t)(1 << camera_index);
             // xxxjack green screen removal
             pcl_pointcloud->push_back(pt);
         }
@@ -391,7 +394,7 @@ protected:
     std::mutex processing_mutex;  //<! Exclusive lock for frame to pointcloud processing.
     std::condition_variable processing_done_cv; //<! Condition variable signalling pointcloud ready
     bool processing_done = false;
-    bool debug = true;
+    bool debug = false;
     std::string record_to_file;
 
 };
