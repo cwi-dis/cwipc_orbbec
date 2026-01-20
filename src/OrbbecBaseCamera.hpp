@@ -75,11 +75,11 @@ public:
         return false;
     }
     virtual bool map2d3d(int x_2d, int y_2d, int d_2d, float* out3d) override final {
-        if (current_captured_frameset == nullptr) {
-            _log_error("map2d3d: current_captured_frameset is NULL");
+        if (current_processed_frameset == nullptr) {
+            _log_error("map2d3d: current_processed_frameset is NULL");
             return false;
         }
-        std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
+        std::shared_ptr<ob::Frame> depth_frame = current_processed_frameset->getFrame(OB_FRAME_DEPTH);
         if (depth_frame == nullptr) {
             _log_error("map2d3d: missing depth frame");
             return false;
@@ -105,6 +105,7 @@ public:
             _log_error(std::string("map2d3d: ob_error: ")+ob_error_get_message(error));
             return false;
         }
+        result.z /= 1000.0;
         out3d[0] = result.x;
         out3d[1] = result.y;
         out3d[2] = result.z;
@@ -172,13 +173,13 @@ public:
     cwipc_pcl_pointcloud access_current_pcl_pointcloud() { return current_pcl_pointcloud; }
     /// Step 5: Save auxdata from frameset into given cwipc object.
     void save_frameset_auxdata(cwipc *pc) {
-        if (current_captured_frameset == nullptr) {
-            _log_error("save_frameset_auxdata: current_captured_frameset is NULL");
+        if (current_processed_frameset == nullptr) {
+            _log_error("save_frameset_auxdata: current_processed_frameset is NULL");
             return;
         }
         if (auxData.want_auxdata_depth || auxData.want_auxdata_rgb) {
-            std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
-            std::shared_ptr<ob::Frame> color_frame = current_captured_frameset->getFrame(OB_FRAME_COLOR);
+            std::shared_ptr<ob::Frame> depth_frame = current_processed_frameset->getFrame(OB_FRAME_DEPTH);
+            std::shared_ptr<ob::Frame> color_frame = current_processed_frameset->getFrame(OB_FRAME_COLOR);
             if (depth_frame == nullptr || color_frame == nullptr) {
                 _log_error("save_frameset_auxdata: Failed to get depth frame or color frame from capture for auxiliary data");
                 return;
@@ -202,7 +203,7 @@ public:
             if (auxData.want_auxdata_rgb) {
                 std::string name = "rgb." + serial;
 #if 0
-                color_image = _uncompress_color_image(current_captured_frameset, color_image);
+                color_image = _uncompress_color_image(current_processed_frameset, color_image);
 #endif
                 int bpp=4;
                 int stride = color_image_width_pixels*bpp;
@@ -334,6 +335,9 @@ protected:
             _apply_filters_to_depth_image(depth_image); //filtering depthmap => better now because if we map depth to color then we need to filter more points.
             color_image = _uncompress_color_image(processing_frameset, color_image);
 #endif
+            // Keep frameset for auxdata, map2d3d, etc.
+            current_processed_frameset = processing_frameset;
+
             //  
             // generate pointcloud
             //
@@ -422,6 +426,7 @@ protected:
     moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> captured_frame_queue;
     moodycamel::BlockingReaderWriterQueue<std::shared_ptr<ob::FrameSet>> processing_frame_queue;
     std::shared_ptr<ob::FrameSet> current_captured_frameset;
+    std::shared_ptr<ob::FrameSet> current_processed_frameset;
     bool waiting_for_capture = false;           //< Boolean to stop issuing warning messages while paused.
     bool camera_sync_ismaster;
     bool camera_sync_inuse;
