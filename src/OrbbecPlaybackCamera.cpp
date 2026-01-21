@@ -35,28 +35,31 @@ void OrbbecPlaybackCamera::_post_start_this_camera() {
 
 
 bool OrbbecPlaybackCamera::_init_pipeline_for_this_camera(std::shared_ptr<ob::Config> config) {
-    _log_error("orbbec_playback not yet implemented");
-    return false;
-#ifdef xxxjack
-    std::shared_ptr<ob::Device> device = camera_pipeline.getDevice();
+    // Create the playback device
+    camera_device = std::make_shared<ob::PlaybackDevice>(playback_filename);
+    // Create the pipeline
+    camera_pipeline = nullptr;
+    camera_pipeline = std::make_shared<ob::Pipeline>(camera_device);
+#if 0
+    // xxxjack is this retimestamp?
     // Ensure device clock is synchronized with host clock.
-    device->timerSyncWithHost();
+    camera_device->timerSyncWithHost();
+#endif
     // Ensure frames are synchronized
-    camera_pipeline.enableFrameSync();
-    // Set a flag if we want to record.
-    uses_recorder = record_to_file != "";
+    camera_pipeline->enableFrameSync();
     try {
         config->enableVideoStream(OB_STREAM_COLOR, hardware.color_width, hardware.color_height, hardware.fps, OB_FORMAT_BGRA);
         config->enableVideoStream(OB_STREAM_DEPTH, hardware.depth_width, hardware.depth_height, hardware.fps, OB_FORMAT_Y16);
         config->setFrameAggregateOutputMode(OB_FRAME_AGGREGATE_OUTPUT_ALL_TYPE_FRAME_REQUIRE);
+#if 1
         // xxxjack this is really only for depth2color mode.
         config->setAlignMode(ALIGN_D2C_HW_MODE);
+#endif
     } catch(ob::Error& e) {
         _log_error(std::string("enableVideoStream error: ") + e.what());
         return false;
     }
-    return _start_recorder();
-#endif
+    return true;
 }
 
 void OrbbecPlaybackCamera::start_camera_streaming() {
