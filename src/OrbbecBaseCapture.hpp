@@ -65,7 +65,10 @@ public:
             _unload_cameras();
             return false;
         }
-        _start_cameras();
+        if (!_start_cameras()) {
+            _unload_cameras();
+            return false;
+        }
 
         //
         // start our run thread (which will drive the capturers and merge the pointclouds)
@@ -233,44 +236,46 @@ protected:
     virtual void _initial_camera_synchronization() override {
     }
 
-    virtual void _start_cameras() final {
+    virtual bool _start_cameras() final {
         bool start_error = false;
         for (auto cam: cameras) {
             if (!cam->pre_start_all_cameras()) {
                 start_error = true;
             }
         }
-        // xxxjack Check for Orbbec. K4A wants master camera started _last_, because then
-        // any recordings will be automatically starting at the same frame. Need to check
-        // that this is also true for Orbbec.
-        for (auto cam : cameras) {
-            if (cam->is_sync_master()) {
-                continue;
+        if (!start_error) {
+            // xxxjack Check for Orbbec. K4A wants master camera started _last_, because then
+            // any recordings will be automatically starting at the same frame. Need to check
+            // that this is also true for Orbbec.
+            for (auto cam : cameras) {
+                if (cam->is_sync_master()) {
+                    continue;
+                }
+
+                if (!cam->start_camera()) {
+                    start_error = true;
+                }
             }
 
-            if (!cam->start_camera()) {
-                start_error = true;
+            for (auto cam : cameras) {
+                if (!cam->is_sync_master()) {
+                    continue;
+                }
+
+                if (!cam->start_camera()) {
+                    start_error = true;
+                }
             }
         }
-
-        for (auto cam : cameras) {
-            if (!cam->is_sync_master()) {
-                continue;
-            }
-
-            if (!cam->start_camera()) {
-                start_error = true;
+        if (!start_error) {
+            for (auto cam : cameras) {
+                cam->post_start_all_cameras();
             }
         }
-        for (auto cam : cameras) {
-            cam->post_start_all_cameras();
-        }
-
         if (start_error) {
+            // xxxjack may override earlier error...
             _log_error("Not all cameras could be started");
-            _unload_cameras();
-
-            return;
+            return false;
         }
 
         starttime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -290,6 +295,7 @@ protected:
 
             cam->start_camera_streaming();
         }
+        return true;
     }
 
     virtual void _unload_cameras() override final {

@@ -35,7 +35,7 @@ void OrbbecPlaybackCamera::_post_start_this_camera() {
 
 
 bool OrbbecPlaybackCamera::_init_pipeline_for_this_camera(std::shared_ptr<ob::Config> config) {
-    _log_error("Not yet implemented");
+    _log_error("orbbec_playback not yet implemented");
     return false;
 #ifdef xxxjack
     std::shared_ptr<ob::Device> device = camera_pipeline.getDevice();
