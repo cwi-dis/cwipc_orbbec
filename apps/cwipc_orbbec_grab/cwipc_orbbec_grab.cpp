@@ -9,6 +9,7 @@
 
 #define DEBUG_AUXDATA
 #undef DEBUG_CONFIG
+#define DEBUG_PLAYBACK
 
 int main(int argc, char** argv) {
     if (argc < 3) {
@@ -29,9 +30,11 @@ int main(int argc, char** argv) {
     if (argc == 4) {
         configFile = argv[3];
     }
-
+#ifdef DEBUG_PLAYBACK
+    generator = cwipc_orbbec_playback(configFile, &error, CWIPC_API_VERSION);
+#else
     generator = cwipc_orbbec(configFile, &error, CWIPC_API_VERSION);
-
+#endif
     if (generator == NULL) {
         std::cerr << argv[0] << ": creating orbbec grabber failed: " << error << std::endl;
 
