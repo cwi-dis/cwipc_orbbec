@@ -23,7 +23,7 @@ public:
     // stop_camera() defined in base class.
 
 protected:
-    bool _init_config_for_this_camera(std::shared_ptr<ob::Config> config);
+    bool _init_pipeline_for_this_camera(std::shared_ptr<ob::Config> config);
     virtual bool _init_hardware_for_this_camera() override final { return true; }
     void _post_start_this_camera();
     virtual void _start_capture_thread() override final {}

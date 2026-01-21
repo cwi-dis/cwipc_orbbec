@@ -13,11 +13,11 @@ bool OrbbecPlaybackCamera::start_camera() {
     assert(camera_processing_thread == nullptr);
     if (debug) _log_debug("Starting pipeline");
     auto config = std::make_shared<ob::Config>();
-    if (!_init_config_for_this_camera(config)) {
+    if (!_init_pipeline_for_this_camera(config)) {
         return false;
     }
     try {
-        camera_pipeline.start(config);
+        camera_pipeline->start(config);
     } catch(ob::Error& e) {
         _log_error(std::string("pipeline.start error: ") + e.what());
       return false;
@@ -34,7 +34,7 @@ void OrbbecPlaybackCamera::_post_start_this_camera() {
 }
 
 
-bool OrbbecPlaybackCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> config) {
+bool OrbbecPlaybackCamera::_init_pipeline_for_this_camera(std::shared_ptr<ob::Config> config) {
     _log_error("Not yet implemented");
     return false;
 #ifdef xxxjack

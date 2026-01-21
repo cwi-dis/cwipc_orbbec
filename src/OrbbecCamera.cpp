@@ -15,11 +15,11 @@ bool OrbbecCamera::start_camera() {
     assert(camera_processing_thread == nullptr);
     if (debug) _log_debug("Starting pipeline");
     auto config = std::make_shared<ob::Config>();
-    if (!_init_config_for_this_camera(config)) {
+    if (!_init_pipeline_for_this_camera(config)) {
         return false;
     }
     try {
-        camera_pipeline.start(config);
+        camera_pipeline->start(config);
     } catch(ob::Error& e) {
         _log_error(std::string("pipeline.start error: ") + e.what());
       return false;
@@ -37,55 +37,60 @@ void OrbbecCamera::_post_start_this_camera() {
 
 
 bool OrbbecCamera::_init_hardware_for_this_camera() {
-    auto camera_handle = camera_pipeline.getDevice();
     if (hardware.color_exposure_time >= 0) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_EXPOSURE_INT, hardware.color_exposure_time);
+        camera_device->setIntProperty(OB_PROP_COLOR_EXPOSURE_INT, hardware.color_exposure_time);
     } else {
-        camera_handle->setBoolProperty(OB_PROP_COLOR_AUTO_EXPOSURE_BOOL, true);
+        camera_device->setBoolProperty(OB_PROP_COLOR_AUTO_EXPOSURE_BOOL, true);
     }
 
     if (hardware.color_whitebalance >= 0) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_WHITE_BALANCE_INT, hardware.color_whitebalance);
+        camera_device->setIntProperty(OB_PROP_COLOR_WHITE_BALANCE_INT, hardware.color_whitebalance);
     } else {
-        camera_handle->setBoolProperty(OB_PROP_COLOR_AUTO_WHITE_BALANCE_BOOL, true);
+        camera_device->setBoolProperty(OB_PROP_COLOR_AUTO_WHITE_BALANCE_BOOL, true);
     }
 
-    if (hardware.color_backlight_compensation >= 0 && camera_handle->isPropertySupported(OB_PROP_COLOR_BACKLIGHT_COMPENSATION_INT, OB_PERMISSION_WRITE)) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_BACKLIGHT_COMPENSATION_INT, hardware.color_backlight_compensation);
+    if (hardware.color_backlight_compensation >= 0 && camera_device->isPropertySupported(OB_PROP_COLOR_BACKLIGHT_COMPENSATION_INT, OB_PERMISSION_WRITE)) {
+        camera_device->setIntProperty(OB_PROP_COLOR_BACKLIGHT_COMPENSATION_INT, hardware.color_backlight_compensation);
     }
 
     if (hardware.color_brightness >= 0) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_BRIGHTNESS_INT, hardware.color_brightness);
+        camera_device->setIntProperty(OB_PROP_COLOR_BRIGHTNESS_INT, hardware.color_brightness);
     }
 
     if (hardware.color_contrast >= 0) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_CONTRAST_INT, hardware.color_contrast);
+        camera_device->setIntProperty(OB_PROP_COLOR_CONTRAST_INT, hardware.color_contrast);
     }
 
     if (hardware.color_saturation >= 0) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_SATURATION_INT, hardware.color_saturation);
+        camera_device->setIntProperty(OB_PROP_COLOR_SATURATION_INT, hardware.color_saturation);
     }
 
     if (hardware.color_sharpness >= 0) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_SHARPNESS_INT, hardware.color_sharpness);
+        camera_device->setIntProperty(OB_PROP_COLOR_SHARPNESS_INT, hardware.color_sharpness);
     }
 
     if (hardware.color_gain >= 0) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_GAIN_INT, hardware.color_gain);
+        camera_device->setIntProperty(OB_PROP_COLOR_GAIN_INT, hardware.color_gain);
     }
 
     if (hardware.color_powerline_frequency >= 0) {
-        camera_handle->setIntProperty(OB_PROP_COLOR_POWER_LINE_FREQUENCY_INT, hardware.color_powerline_frequency);
+        camera_device->setIntProperty(OB_PROP_COLOR_POWER_LINE_FREQUENCY_INT, hardware.color_powerline_frequency);
     }
     return true;
 }
 
-bool OrbbecCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> config) {
-    std::shared_ptr<ob::Device> device = camera_pipeline.getDevice();
+bool OrbbecCamera::_init_pipeline_for_this_camera(std::shared_ptr<ob::Config> config) {
+    if (camera_device == nullptr) {
+        _log_error("camera_device == nullptr");
+        return false;
+    }
+    // Create the pipeline
+    camera_pipeline = nullptr;
+    camera_pipeline = std::make_shared<ob::Pipeline>(camera_device);
     // Ensure device clock is synchronized with host clock.
-    device->timerSyncWithHost();
+    camera_device->timerSyncWithHost();
     // Ensure frames are synchronized
-    camera_pipeline.enableFrameSync();
+    camera_pipeline->enableFrameSync();
     // Set a flag if we want to record.
     uses_recorder = record_to_file != "";
     try {
@@ -103,9 +108,8 @@ bool OrbbecCamera::_init_config_for_this_camera(std::shared_ptr<ob::Config> conf
 
 bool OrbbecCamera::_start_recorder() {
     if (!uses_recorder) return true;
-    std::shared_ptr<ob::Device> device = camera_pipeline.getDevice();
     _log_trace("enabling recorder to " + record_to_file);
-    recording_device = std::make_shared<ob::RecordDevice>(device, record_to_file);
+    recording_device = std::make_shared<ob::RecordDevice>(camera_device, record_to_file);
     if (recording_device == nullptr) {
         _log_error("Recorder failed for file: " + record_to_file);
         uses_recorder = false;

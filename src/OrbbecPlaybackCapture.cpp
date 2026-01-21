@@ -1,12 +1,12 @@
 #include "OrbbecPlaybackCapture.hpp"
 
 OrbbecPlaybackCapture::OrbbecPlaybackCapture()
-:   OrbbecBaseCapture<Type_api_camera,Type_our_camera>("cwipc_orbbec::OrbbecPlaybackCapture", "orbbec")
+:   OrbbecBaseCapture<Type_api_camera,Type_our_camera>("cwipc_orbbec::OrbbecPlaybackCapture", "orbbec_playback")
 {
 }
 
 bool OrbbecPlaybackCapture::_apply_config(const char* configFilename) {
-    bool ok = OrbbecPlaybackCapture::_apply_config(configFilename);
+    bool ok = OrbbecBaseCapture::_apply_config(configFilename);
     if (!ok) {
         return ok;
     }

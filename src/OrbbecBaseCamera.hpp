@@ -27,7 +27,7 @@ public:
         processing(_configuration.processing),
         hardware(_configuration.hardware),
         auxData(_configuration.auxData),
-        camera_pipeline(_handle),
+        camera_device(_handle),
         captured_frame_queue(1),
         processing_frame_queue(1),
         camera_sync_inuse(configuration.sync.sync_master_serial != ""),
@@ -78,8 +78,9 @@ public:
         delete camera_processing_thread;
         camera_processing_thread = nullptr;
 
-        if (camera_started) {
-            camera_pipeline.stop();
+        if (camera_started && camera_pipeline != nullptr) {
+            camera_pipeline->stop();
+            camera_pipeline = nullptr;
         }
         processing_done = true;
         processing_done_cv.notify_one();
@@ -160,11 +161,11 @@ public:
     /// This ensures protected attribute current_captured_frameset is valid.
 
     virtual uint64_t wait_for_captured_frameset(uint64_t minimum_timestamp) final {
-        if (camera_stopped) return 0;
+        if (camera_stopped || camera_pipeline == nullptr) return 0;
         uint64_t resultant_timestamp = 0;
         do {
             waiting_for_capture = true;
-            current_captured_frameset = camera_pipeline.waitForFrameset();
+            current_captured_frameset = camera_pipeline->waitForFrameset();
             if (current_captured_frameset == nullptr) return 0;
             std::shared_ptr<ob::Frame> depth_frame = current_captured_frameset->getFrame(OB_FRAME_DEPTH);
             if (depth_frame == nullptr) {
@@ -463,8 +464,9 @@ protected:
     OrbbecCameraProcessingParameters& filtering;
     OrbbecCameraHardwareConfig& hardware;
     OrbbecCaptureAuxDataConfig& auxData; //<! Auxiliary data configuration
-
-    ob::Pipeline camera_pipeline;
+    
+    Type_api_camera camera_device = nullptr;
+    std::shared_ptr<ob::Pipeline> camera_pipeline = nullptr;
     bool camera_started = false;
     bool camera_stopped = true;
     std::thread *camera_capturer_thread;

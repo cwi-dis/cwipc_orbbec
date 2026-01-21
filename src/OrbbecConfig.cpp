@@ -189,8 +189,8 @@ bool OrbbecCaptureConfig::from_string(const char *jsonBuffer, std::string typeWa
         std::string type;
         json_data.at("type").get_to(type);
 
-        if (type != "orbbec") {
-            cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + "(inline buffer) " + "ignored, is not orbbec but " + type);
+        if (type != typeWanted) {
+            cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + "(inline buffer) " + "ignored, is not " + typeWanted + " but " + type);
             return false;
         }
 
