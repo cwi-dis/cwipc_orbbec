@@ -17,10 +17,14 @@ public:
     }
 
     // pre_start_all_cameras() defined in base class
-    bool start_camera() override;
-    virtual void start_camera_streaming() override;
+    bool start_camera() override final;
+    virtual void start_camera_streaming() override final;
     // pre_stop_camera() defined in base class
     // stop_camera() defined in base class.
+    virtual bool seek(uint64_t timestamp) override final;
+    virtual bool eof() override final;
+    virtual void pause();
+    virtual void resume();
 
 protected:
     bool _init_pipeline_for_this_camera(std::shared_ptr<ob::Config> config);

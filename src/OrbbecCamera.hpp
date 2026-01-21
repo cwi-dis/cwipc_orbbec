@@ -22,6 +22,9 @@ public:
     // pre_stop_camera() defined in base class
     // stop_camera() defined in base class.
 
+    virtual bool seek(uint64_t timestamp) override final { return false; }
+    virtual bool eof() override final { return false; }
+
 protected:
     bool _init_pipeline_for_this_camera(std::shared_ptr<ob::Config> config);
     bool _start_recorder();
