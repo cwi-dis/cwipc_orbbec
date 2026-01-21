@@ -185,7 +185,7 @@ public:
 
 protected:
     /// Load configuration from file or string.
-    virtual bool _apply_config(const char* configFilename) override final {
+    virtual bool _apply_config(const char* configFilename) override {
         // Clear out old configuration but keep auxData.
         OrbbecCaptureConfig newConfiguration;
         newConfiguration.auxData = configuration.auxData;
@@ -221,10 +221,6 @@ protected:
 
         _log_error("Unknown camera " + serial);
         return 0;
-    }
-    /// Create our wrapper around a single camera. Here because it needs to be templated.
-    virtual inline Type_our_camera *_create_single_camera(Type_api_camera _handle, OrbbecCaptureConfig& configuration, int _camera_index) final {
-        return new Type_our_camera(_handle, configuration, _camera_index);
     }
 
     /// Setup camera synchronization (if needed).

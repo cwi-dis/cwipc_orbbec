@@ -28,8 +28,8 @@ protected:
     void _stop_recorder();
     void _post_start_this_camera();
     virtual bool _init_hardware_for_this_camera() override final;
-    virtual void _start_capture_thread() override;
-    virtual void _capture_thread_main() override;
+    virtual void _start_capture_thread() override final;
+    virtual void _capture_thread_main() override final;
 protected:
     std::shared_ptr<ob::RecordDevice> recording_device = nullptr;
 };

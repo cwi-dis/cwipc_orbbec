@@ -16,6 +16,10 @@ class OrbbecCapture : public OrbbecBaseCapture<std::shared_ptr<ob::Device>, Orbb
 
 protected:
     OrbbecCapture();
+    /// Create our wrapper around a single camera. Here because it needs to be templated.
+    inline Type_our_camera *_create_single_camera(Type_api_camera _handle, OrbbecCaptureConfig& configuration, int _camera_index) {
+        return new Type_our_camera(_handle, configuration, _camera_index);
+    }
 
 public:
     static int countDevices();

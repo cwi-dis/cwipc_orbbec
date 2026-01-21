@@ -4,7 +4,9 @@ add_library(cwipc_orbbec
 	SHARED
 	cwipc_orbbec.cpp
 	OrbbecCamera.cpp
+	OrbbecPlaybackCamera.cpp
 	OrbbecCapture.cpp
+	OrbbecPlaybackCapture.cpp
 	OrbbecConfig.cpp
 	cwipc_pcl_additions.cpp
 )
@@ -12,9 +14,11 @@ add_library(cwipc_orbbec
 target_sources(cwipc_orbbec
 	PRIVATE
 	"OrbbecBaseCamera.hpp"
-	"OrbbecBaseCapture.hpp"
 	"OrbbecCamera.hpp"
+	"OrbbecPlaybackCamera.hpp"
+	"OrbbecBaseCapture.hpp"
 	"OrbbecCapture.hpp"
+	"OrbbecPlaybackCapture.hpp"
 	"OrbbecConfig.hpp"
 	"readerwriterqueue.h"
 	"../include/cwipc_orbbec/api.h"

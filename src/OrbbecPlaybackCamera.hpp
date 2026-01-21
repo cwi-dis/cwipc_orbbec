@@ -1,0 +1,34 @@
+#pragma once
+
+#include "libobsensor/hpp/Device.hpp"
+#include "libobsensor/hpp/RecordPlayback.hpp"
+#include "OrbbecBaseCamera.hpp"
+
+class OrbbecPlaybackCamera : public OrbbecBaseCamera<std::shared_ptr<ob::PlaybackDevice>> {
+    typedef std::shared_ptr<ob::PlaybackDevice> Type_api_camera;
+
+    OrbbecPlaybackCamera(const OrbbecPlaybackCamera&);
+    OrbbecPlaybackCamera& operator=(const OrbbecPlaybackCamera&);
+
+public:
+    OrbbecPlaybackCamera(Type_api_camera camera, OrbbecCaptureConfig& config, int cameraIndex, std::string filename);
+
+    virtual ~OrbbecPlaybackCamera() {
+    }
+
+    // pre_start_all_cameras() defined in base class
+    bool start_camera() override;
+    virtual void start_camera_streaming() override;
+    // pre_stop_camera() defined in base class
+    // stop_camera() defined in base class.
+
+protected:
+    bool _init_config_for_this_camera(std::shared_ptr<ob::Config> config);
+    virtual bool _init_hardware_for_this_camera() override final { return true; }
+    void _post_start_this_camera();
+    virtual void _start_capture_thread() override final {}
+    virtual void _capture_thread_main() override final {}
+private:
+    std::string playback_filename;
+
+};
