@@ -37,6 +37,8 @@ public:
     }
 
     virtual ~OrbbecBaseCamera() {
+        camera_device = nullptr;
+        camera_pipeline = nullptr;
     }
 
     /// Step 1 in starting: tell the camera we are going to start. Called for all cameras.

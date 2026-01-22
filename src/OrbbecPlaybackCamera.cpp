@@ -11,6 +11,8 @@ bool OrbbecPlaybackCamera::start_camera() {
     assert(camera_stopped);
     assert(!camera_started);
     assert(camera_processing_thread == nullptr);
+    assert(camera_pipeline == nullptr);
+    playback_eof = false;
     if (debug) _log_debug("Starting pipeline");
     auto config = std::make_shared<ob::Config>();
     if (!_init_pipeline_for_this_camera(config)) {
@@ -31,12 +33,40 @@ bool OrbbecPlaybackCamera::start_camera() {
 
 void OrbbecPlaybackCamera::_post_start_this_camera() {
     // XXX Implement me
+    playback_device->setPlaybackStatusChangeCallback(
+        [&](OBPlaybackStatus status) {
+            _log_debug("PlaybackStatusCallback status=" + std::to_string((int)status));
+            if (status == OB_PLAYBACK_STOPPED) {
+                _stopped_callback();
+            }
+        });
 }
 
+void OrbbecPlaybackCamera::_stopped_callback() {
+    _log_trace("end of file reached");
+    playback_eof = true;
+}
+
+void OrbbecPlaybackCamera::pause() {
+
+}
+
+void OrbbecPlaybackCamera::resume() {
+
+}
+
+bool OrbbecPlaybackCamera::seek(uint64_t timestamp) {
+    return false;
+}
+
+bool OrbbecPlaybackCamera::eof() {
+    return playback_eof;
+}
 
 bool OrbbecPlaybackCamera::_init_pipeline_for_this_camera(std::shared_ptr<ob::Config> config) {
     // Create the playback device
-    camera_device = std::make_shared<ob::PlaybackDevice>(playback_filename);
+    playback_device = std::make_shared<ob::PlaybackDevice>(playback_filename);
+    camera_device = playback_device;
     // Create the pipeline
     camera_pipeline = nullptr;
     camera_pipeline = std::make_shared<ob::Pipeline>(camera_device);

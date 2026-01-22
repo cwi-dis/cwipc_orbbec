@@ -14,6 +14,7 @@ public:
     OrbbecPlaybackCamera(Type_api_camera camera, OrbbecCaptureConfig& config, int cameraIndex, std::string filename);
 
     virtual ~OrbbecPlaybackCamera() {
+        playback_device = nullptr;
     }
 
     // pre_start_all_cameras() defined in base class
@@ -32,7 +33,9 @@ protected:
     void _post_start_this_camera();
     virtual void _start_capture_thread() override final {}
     virtual void _capture_thread_main() override final {}
+    void _stopped_callback();
 private:
     std::string playback_filename;
-
+    std::shared_ptr<ob::PlaybackDevice> playback_device;    //< Same object as camera_device
+    bool playback_eof = false;
 };
