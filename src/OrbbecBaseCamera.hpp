@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <mutex>
+#include <condition_variable>
 
 #include "libobsensor/h/ObTypes.h"
 #include "libobsensor/hpp/Frame.hpp"
