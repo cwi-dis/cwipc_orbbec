@@ -9,7 +9,7 @@
 
 #define DEBUG_AUXDATA
 #undef DEBUG_CONFIG
-#undef DEBUG_PLAYBACK
+#define DEBUG_PLAYBACK
 
 int main(int argc, char** argv) {
     if (argc < 3) {
