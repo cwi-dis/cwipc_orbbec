@@ -59,9 +59,9 @@ set_target_properties(cwipc_orbbec PROPERTIES
 
 
 if(WIN32)
-	add_custom_target(
-		TARGET cwipc_orbbec POST_BUILD
-		command "${CMAKE_COMMAND}" -E copy -t $<TARGET_FILE_DIR:cwipc_orbbec> $<TARGET_RUNTIME_DLLS:cwipc_orbbec> 
+	add_custom_command( TARGET cwipc_orbbec POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy_if_different $<TARGET_RUNTIME_DLLS:cwipc_orbbec> $<TARGET_FILE_DIR:cwipc_orbbec> 
+		COMMAND_EXPAND_LISTS
 	)
 	install(TARGETS cwipc_orbbec
 	RUNTIME_DEPENDENCIES
