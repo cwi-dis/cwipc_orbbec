@@ -99,13 +99,13 @@ class TestApi(unittest.TestCase):
         finally:
             if grabber: grabber.free()
 
-    @unittest.skipIf(sys.platform=='linux' and not 'DISPLAY' in os.environ, "Test requires X server/OpenGL")
-    def test_cwipc_k4aplayback(self):
+    @unittest.skip("no fixtures yet")
+    def test_cwipc_orbbecplayback(self):
         """Test that we can grab a orbbec image from the playback grabber"""
         grabber = None
         pc = None
         try:
-            grabber = _cwipc_orbbec.cwipc_k4aplayback(TEST_FIXTURES_PLAYBACK_CONFIG)
+            grabber = _cwipc_orbbec.cwipc_orbbecplayback(TEST_FIXTURES_PLAYBACK_CONFIG)
             self.assertFalse(grabber.eof())
             self.assertTrue(grabber.available(True))
             pc = grabber.get()
@@ -116,13 +116,13 @@ class TestApi(unittest.TestCase):
             if grabber: grabber.free()
             if pc: pc.free()
             
-    @unittest.skipIf(sys.platform=='linux' and not 'DISPLAY' in os.environ, "Test requires X server/OpenGL")
-    def test_cwipc_k4aplayback_seek(self):
+    @unittest.skip("no fixtures yet")
+    def test_cwipc_orbbecplayback_seek(self):
         """Test that we can grab a orbbec image from the playback grabber"""
         grabber = None
         pc = None
         try:
-            grabber = _cwipc_orbbec.cwipc_k4aplayback(TEST_FIXTURES_PLAYBACK_CONFIG)
+            grabber = _cwipc_orbbec.cwipc_orbbecplayback(TEST_FIXTURES_PLAYBACK_CONFIG)
             self.assertFalse(grabber.eof())
             self.assertTrue(grabber.available(True))
             result = grabber.seek(1600233)
