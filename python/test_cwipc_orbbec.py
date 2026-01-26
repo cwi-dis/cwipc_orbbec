@@ -3,30 +3,7 @@ import cwipc
 import _cwipc_orbbec
 import os
 import sys
-import tempfile
 
-if 0:
-    # This code can be used to debug the C++ code in XCode:
-    # - build for XCode with cmake
-    # - build the cwipc_util project
-    # - Fix the pathname for the dylib
-    # - run `python3 test_cwipc_util`
-    # - Attach to python in the XCode debugger
-    # - press return to python3.
-    #
-    # A similar procedure works for debugging with Visual Studio under windows.
-    import _cwipc_orbbec
-    _cwipc_orbbec.cwipc_orbbec_dll_load('C:/Users/VRTogether/VRTogether/cwipc_orbbec/build/bin/RelWithDebInfo/cwipc_orbbec.dll')
-    print('Type return after attaching in XCode debugger (pid=%d) - ' % os.getpid())
-    sys.stdout.flush()
-    sys.stdin.readline()
-
-#
-# Windows search path is horrible. Work around it for testing with an environment variable
-#
-if 'CWIPC_TEST_DLL' in os.environ:
-    filename = os.environ['CWIPC_TEST_DLL']
-    dllobj = _cwipc_orbbec.cwipc_orbbec_dll_load(filename)
 
 #
 # Find directories for test inputs and outputs
