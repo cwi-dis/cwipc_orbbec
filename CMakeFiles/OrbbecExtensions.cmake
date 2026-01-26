@@ -25,7 +25,8 @@ endmacro()
 macro(copy_orbbec_extensions destdir)
     get_orbbec_extension_location(extension_dir)
     set(source_path "${extension_dir}")
-    cmake_path(APPEND destdir "extensions" destination_path)
+    set(destination_path "${destdir}")
+    cmake_path(APPEND destination_path "extensions")
     add_custom_command(TARGET cwipc_orbbec POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${source_path}"
