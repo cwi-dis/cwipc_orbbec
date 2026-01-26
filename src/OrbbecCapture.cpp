@@ -13,8 +13,6 @@ int OrbbecCapture::countDevices() {
 }
 
 bool OrbbecCapture::_apply_auto_config() {
-    bool hasFailed = false;
-
     ob::Context context;
     auto deviceList = context.queryDeviceList();
 
@@ -32,12 +30,10 @@ bool OrbbecCapture::_apply_auto_config() {
 
         configuration.all_camera_configs.push_back(config);
     }
-
-    if (hasFailed) {
-        _unload_cameras();
+    if (configuration.all_camera_configs.size() == 0) {
+        _log_error("no cameras found during auto-configuration");
         return false;
     }
-
     return true;
 }
 

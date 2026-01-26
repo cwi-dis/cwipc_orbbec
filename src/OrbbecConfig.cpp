@@ -151,15 +151,15 @@ bool OrbbecCaptureConfig::from_file(const char *filename, std::string typeWanted
         json_data.at("version").get_to(version);
 
         if (version != 5) {
-            cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + " ignored, is not version 5");
+            cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + " is not version 5");
             return false;
         }
 
         std::string type;
         json_data.at("type").get_to(type);
 
-        if (type != typeWanted) {
-            cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + " ignored, is not " + typeWanted + " but " + type);
+            if (type != typeWanted) {
+                cwipc_log(CWIPC_LOG_LEVEL_ERROR, "cwipc_orbbec", std::string("CameraConfig ") + filename + "  type=" + type + " but expected " + typeWanted);
             return false;
         }
 
