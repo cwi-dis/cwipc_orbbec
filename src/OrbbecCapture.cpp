@@ -48,6 +48,9 @@ bool OrbbecCapture::_init_hardware_for_all_cameras() {
 
 bool OrbbecCapture::_create_cameras() {
     ob::Context context;
+#ifdef CWIPC_ORBBEC_LOGGING
+    context.setLoggerToConsole(OB_LOG_SEVERITY_DEBUG); // xxxjack
+#endif
     auto deviceList = context.queryDeviceList();
 
     for (int i = 0; i < deviceList->deviceCount(); i++) {
