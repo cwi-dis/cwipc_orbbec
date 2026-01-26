@@ -35,9 +35,6 @@ _thisdir=os.path.dirname(os.path.join(os.getcwd(), __file__))
 _topdir=os.path.dirname(_thisdir)
 TEST_FIXTURES_DIR=os.path.join(_topdir, "tests", "fixtures")
 TEST_FIXTURES_PLAYBACK_CONFIG=os.path.join(TEST_FIXTURES_DIR, "input", "recording", "cameraconfig.json")
-TEST_OUTPUT_DIR=os.path.join(TEST_FIXTURES_DIR, "output")
-if not os.access(TEST_OUTPUT_DIR, os.W_OK):
-    TEST_OUTPUT_DIR=tempfile.mkdtemp('cwipc_orbbec_test') # type: ignore
 
 class TestApi(unittest.TestCase):
     
@@ -99,13 +96,14 @@ class TestApi(unittest.TestCase):
         finally:
             if grabber: grabber.free()
 
-    @unittest.skip("no fixtures yet")
-    def test_cwipc_orbbecplayback(self):
+    def test_cwipc_orbbec_playback(self):
         """Test that we can grab a orbbec image from the playback grabber"""
         grabber = None
         pc = None
+        if not os.path.exists(TEST_FIXTURES_PLAYBACK_CONFIG):
+            self.skipTest(f'Playback config file {TEST_FIXTURES_PLAYBACK_CONFIG} not found')
         try:
-            grabber = _cwipc_orbbec.cwipc_orbbecplayback(TEST_FIXTURES_PLAYBACK_CONFIG)
+            grabber = _cwipc_orbbec.cwipc_orbbec_playback(TEST_FIXTURES_PLAYBACK_CONFIG)
             self.assertFalse(grabber.eof())
             self.assertTrue(grabber.available(True))
             pc = grabber.get()
@@ -116,13 +114,15 @@ class TestApi(unittest.TestCase):
             if grabber: grabber.free()
             if pc: pc.free()
             
-    @unittest.skip("no fixtures yet")
-    def test_cwipc_orbbecplayback_seek(self):
+    @unittest.skip("not implemented yet")
+    def test_cwipc_orbbec_playback_seek(self):
         """Test that we can grab a orbbec image from the playback grabber"""
         grabber = None
         pc = None
+        if not os.path.exists(TEST_FIXTURES_PLAYBACK_CONFIG):
+            self.skipTest(f'Playback config file {TEST_FIXTURES_PLAYBACK_CONFIG} not found')
         try:
-            grabber = _cwipc_orbbec.cwipc_orbbecplayback(TEST_FIXTURES_PLAYBACK_CONFIG)
+            grabber = _cwipc_orbbec.cwipc_orbbec_playback(TEST_FIXTURES_PLAYBACK_CONFIG)
             self.assertFalse(grabber.eof())
             self.assertTrue(grabber.available(True))
             result = grabber.seek(1600233)

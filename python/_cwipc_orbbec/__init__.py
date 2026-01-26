@@ -9,7 +9,7 @@ from cwipc.util import _cwipc_dll_search_path_collection # type: ignore
 
 __all__ = [
     "cwipc_orbbec",
-    "cwipc_orbbecplayback",
+    "cwipc_orbbec_playback",
     "cwipc_orbbec_dll_load"
 ]
 
@@ -42,11 +42,8 @@ def cwipc_orbbec_dll_load(libname : Optional[str]=None) -> ctypes.CDLL:
     _cwipc_orbbec_dll_reference.cwipc_orbbec.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_char_p), ctypes.c_ulong]
     _cwipc_orbbec_dll_reference.cwipc_orbbec.restype = cwipc_tiledsource_p
     
-    try:
-        _cwipc_orbbec_dll_reference.cwipc_orbbecplayback.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_char_p), ctypes.c_ulong]
-        _cwipc_orbbec_dll_reference.cwipc_orbbecplayback.restype = cwipc_tiledsource_p
-    except AttributeError:
-        pass
+    _cwipc_orbbec_dll_reference.cwipc_orbbec_playback.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_char_p), ctypes.c_ulong]
+    _cwipc_orbbec_dll_reference.cwipc_orbbec_playback.restype = cwipc_tiledsource_p
     return _cwipc_orbbec_dll_reference
         
 def cwipc_orbbec(conffile : Optional[str]=None) -> cwipc_tiledsource_wrapper:
@@ -64,13 +61,13 @@ def cwipc_orbbec(conffile : Optional[str]=None) -> cwipc_tiledsource_wrapper:
         return cwipc_tiledsource_wrapper(rv)
     raise CwipcError("cwipc_orbbec: no cwipc_tiledsource created, but no specific error returned from C library")
 
-def cwipc_orbbecplayback(conffile : Optional[str]=None) -> cwipc_tiledsource_wrapper:
+def cwipc_orbbec_playback(conffile : Optional[str]=None) -> cwipc_tiledsource_wrapper:
     """Returns a cwipc_source object that grabs from orbbec camera recordings and returns cwipc objects on every get() call."""
     errorString = ctypes.c_char_p()
     cconffile = None
     if conffile:
         cconffile = conffile.encode('utf8')
-    rv = cwipc_orbbec_dll_load().cwipc_orbbecplayback(cconffile, ctypes.byref(errorString), CWIPC_API_VERSION)
+    rv = cwipc_orbbec_dll_load().cwipc_orbbec_playback(cconffile, ctypes.byref(errorString), CWIPC_API_VERSION)
     if errorString and errorString.value and not rv:
         raise CwipcError(errorString.value.decode('utf8'))
     if errorString and errorString.value:
