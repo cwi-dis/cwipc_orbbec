@@ -19,7 +19,7 @@ class TestApi(unittest.TestCase):
         try:
             grabber = _cwipc_orbbec.cwipc_orbbec("auto")
         except cwipc.CwipcError as arg:
-            if str(arg) == 'cwipc_orbbec: no orbbec cameras found':
+            if 'no cameras found' in str(arg):
                 self.skipTest(str(arg))
             raise
         return grabber
