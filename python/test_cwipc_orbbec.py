@@ -34,7 +34,7 @@ if 'CWIPC_TEST_DLL' in os.environ:
 _thisdir=os.path.dirname(os.path.join(os.getcwd(), __file__))
 _topdir=os.path.dirname(_thisdir)
 TEST_FIXTURES_DIR=os.path.join(_topdir, "tests", "fixtures")
-TEST_FIXTURES_PLAYBACK_CONFIG=os.path.join(TEST_FIXTURES_DIR, "input", "recording", "cameraconfig.json")
+TEST_FIXTURES_PLAYBACK_CONFIG=os.path.join(TEST_FIXTURES_DIR, "input", "orbbec_recording", "cameraconfig.json")
 
 class TestApi(unittest.TestCase):
     
