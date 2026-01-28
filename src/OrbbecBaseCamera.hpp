@@ -10,7 +10,7 @@
 #include "libobsensor/hpp/Utils.hpp"
 #include "readerwriterqueue.h"
 
-#include "cwipc_util/capturers.hpp"
+#include "cwipc_util/internal/capturers.hpp"
 #include "OrbbecConfig.hpp"
 template<typename Type_api_camera> 
 class OrbbecBaseCamera : public CwipcBaseCamera {

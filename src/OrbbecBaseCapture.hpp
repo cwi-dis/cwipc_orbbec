@@ -9,7 +9,7 @@
 
 #define CWIPC_DEBUG
 #define CWIPC_DEBUG_THREAD
-#include "cwipc_util/capturers.hpp"
+#include "cwipc_util/internal/capturers.hpp"
 #include "OrbbecConfig.hpp"
 
 template<class Type_api_camera, class Type_our_camera> class OrbbecBaseCapture : public CwipcBaseCapture {

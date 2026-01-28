@@ -5,7 +5,7 @@
 #include "libobsensor/hpp/Device.hpp"
 
 #include "cwipc_util/api_pcl.h"
-#include "cwipc_util/capturers.hpp"
+#include "cwipc_util/internal/capturers.hpp"
 
 struct OrbbecCameraProcessingParameters {
     bool do_threshold = true;

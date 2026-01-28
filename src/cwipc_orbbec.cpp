@@ -7,7 +7,7 @@
 
 #include "cwipc_util/api_pcl.h"
 #include "cwipc_util/api.h"
-#include "cwipc_util/capturers.hpp"
+#include "cwipc_util/internal/capturers.hpp"
 #include "cwipc_orbbec/api.h"
 
 #include "OrbbecConfig.hpp"
