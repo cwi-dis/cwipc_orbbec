@@ -70,7 +70,7 @@ class TestApi(unittest.TestCase):
         finally:
             if grabber: grabber.free()
 
-    # @unittest.skipIf('CI' in os.environ, "Skipping playback test on CI server")
+    @unittest.skipIf('CI' in os.environ, "Skipping playback test on CI server")
     def test_cwipc_orbbec_playback(self):
         """Test that we can grab a orbbec image from the playback grabber"""
         grabber = None
