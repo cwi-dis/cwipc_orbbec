@@ -36,7 +36,7 @@ class cwipc_source_orbbec_impl_base : public cwipc_capturer_impl_base<GrabberCla
 public:
     using cwipc_capturer_impl_base<GrabberClass, CameraConfigClass>::cwipc_capturer_impl_base;
 
-    virtual void request_auxiliary_data(const std::string &name) override {
+    virtual void request_auxiliary_data(const std::string &name) override final {
         cwipc_tiledsource::request_auxiliary_data(name);
         this->m_grabber->request_auxiliary_data(
             cwipc_tiledsource::auxiliary_data_requested("rgb"), 
@@ -46,7 +46,7 @@ public:
         );
     }
 
-    virtual bool auxiliary_operation(const std::string op, const void* inbuf, size_t insize, void* outbuf, size_t outsize) override {
+    virtual bool auxiliary_operation(const std::string op, const void* inbuf, size_t insize, void* outbuf, size_t outsize) override final {
         if (op == "map2d3d") {
             if (inbuf == nullptr || insize != 4*sizeof(float)) return false;
             if (outbuf == nullptr || outsize != 3*sizeof(float)) return false;
