@@ -22,9 +22,13 @@ public:
         _unload_cameras();
     }
 
+    virtual bool can_start() override final {
+        return _is_initialized;
+    }
+
     virtual bool start() override final {
-        if (!is_valid()) {
-            _log_error("start() called but not valid()");
+        if (!_is_initialized) {
+            _log_error("start() called but not initialized");
             return false;
         }
         //
@@ -58,7 +62,6 @@ public:
         stopped = false;
         control_thread = new std::thread(&OrbbecBaseCapture::_control_thread_main, this);
         _cwipc_setThreadName(control_thread, L"cwipc_orbbec::control_thread");
-
         return true;
     }
 
@@ -70,8 +73,8 @@ public:
         return cameras.size(); 
     }
 
-    virtual bool is_valid() override final { 
-        return cameras.size() > 0; 
+    virtual bool is_playing() override final { 
+        return control_thread != nullptr;
     }
 
     virtual bool config_reload(const char* configFilename) override final{
@@ -83,6 +86,7 @@ public:
         // Read the configuration.
         //
         if (!_apply_config(configFilename)) {
+            _is_initialized = false;
             return false;
         }
         if (cwipc_log_get_level() >= CWIPC_LOG_LEVEL_DEBUG) {
@@ -93,7 +97,7 @@ public:
         if (camera_config_count == 0) {
             return false;
         }
-
+        _is_initialized = true;
         return true;
     }
 
@@ -108,8 +112,8 @@ public:
     }
 
     virtual bool pointcloud_available(bool wait) override final {
-        if (!is_valid()) {
-            _log_warning("pointcloud_available() called but not valid()");
+        if (!is_playing()) {
+            _log_warning("pointcloud_available() called but not playing");
             std::this_thread::sleep_for(std::chrono::seconds(1));
             return false;
         }
@@ -126,8 +130,8 @@ public:
     }
 
     virtual cwipc* get_pointcloud() override final {
-        if (!is_valid()) {
-            _log_warning("get_pointcloud: returning NULL, no cameras");
+        if (!is_playing()) {
+            _log_error("get_pointcloud: not playing");
             return nullptr;
         }
         _request_new_pointcloud();
@@ -159,7 +163,7 @@ public:
     }
 
     virtual float get_pointSize() override final {
-        if (!is_valid()) {
+        if (!is_playing()) {
             return 0;
         }
 
@@ -317,6 +321,7 @@ protected:
     }
 
     virtual void _unload_cameras() override final {
+
         if (cameras.empty()) return;
         _stop_cameras();
 
@@ -550,7 +555,7 @@ public:
     OrbbecCaptureConfig configuration;
 protected:
     std::vector<Type_our_camera*> cameras;
-
+    bool _is_initialized = false;
     bool stopped = false;
     bool _eof = false;
 

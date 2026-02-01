@@ -106,7 +106,7 @@ cwipc_tiledsource* cwipc_orbbec(const char *configFilename, char **errorMessage,
     }
     cwipc_log_set_errorbuf(errorMessage);
     cwipc_source_orbbec_impl *rv = new cwipc_source_orbbec_impl(configFilename);
-    if (rv && rv->is_valid()) {
+    if (rv && rv->is_playing()) {
         cwipc_log_set_errorbuf(nullptr);
         return rv;
     }
@@ -126,7 +126,7 @@ cwipc_tiledsource* cwipc_orbbec_playback(const char* configFilename, char** erro
     }
     cwipc_log_set_errorbuf(errorMessage);
     cwipc_source_orbbec_playback_impl* rv = new cwipc_source_orbbec_playback_impl(configFilename);
-    if (rv && rv->is_valid()) {
+    if (rv && rv->can_start()) {
         cwipc_log_set_errorbuf(nullptr);
         return rv;
     }
