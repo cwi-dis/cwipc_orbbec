@@ -23,45 +23,14 @@ public:
     }
 
     virtual bool start() override final {
-        cwipc_log(CWIPC_LOG_LEVEL_WARNING, CLASSNAME, "start() not yet implemented (nor needed)");
-        return false;return true;
-    }
-
-    virtual void stop() override final {
-        cwipc_log(CWIPC_LOG_LEVEL_WARNING, CLASSNAME, "stop() not yet implemented (nor needed)");
-    }   
-
-    virtual int get_camera_count() override final { 
-        return cameras.size(); 
-    }
-
-    virtual bool is_valid() override final { 
-        return cameras.size() > 0; 
-    }
-
-    virtual bool config_reload_and_start_capturing(const char* configFilename) override final{
-        _unload_cameras();
-
-        //
-        // Read the configuration.
-        //
-        if (!_apply_config(configFilename)) {
+        if (!is_valid()) {
+            _log_error("start() called but not valid()");
             return false;
         }
-        if (cwipc_log_get_level() >= CWIPC_LOG_LEVEL_DEBUG) {
-            configuration.debug = true;
-        }
-
-        auto camera_config_count = configuration.all_camera_configs.size();
-        if (camera_config_count == 0) {
-            return false;
-        }
-
         //
         // Initialize hardware capture setting (for all cameras)
         //
         if (!_init_hardware_for_all_cameras()) {
-            camera_config_count = 0;
             return false;
         }
 
@@ -89,6 +58,41 @@ public:
         stopped = false;
         control_thread = new std::thread(&OrbbecBaseCapture::_control_thread_main, this);
         _cwipc_setThreadName(control_thread, L"cwipc_orbbec::control_thread");
+
+        return true;
+    }
+
+    virtual void stop() override final {
+        _unload_cameras();
+    }   
+
+    virtual int get_camera_count() override final { 
+        return cameras.size(); 
+    }
+
+    virtual bool is_valid() override final { 
+        return cameras.size() > 0; 
+    }
+
+    virtual bool config_reload(const char* configFilename) override final{
+        if (control_thread != nullptr) {
+            _log_error("config_reload: cannot reload configuration while capturer is running");
+            return false;
+        }
+        //
+        // Read the configuration.
+        //
+        if (!_apply_config(configFilename)) {
+            return false;
+        }
+        if (cwipc_log_get_level() >= CWIPC_LOG_LEVEL_DEBUG) {
+            configuration.debug = true;
+        }
+
+        auto camera_config_count = configuration.all_camera_configs.size();
+        if (camera_config_count == 0) {
+            return false;
+        }
 
         return true;
     }
