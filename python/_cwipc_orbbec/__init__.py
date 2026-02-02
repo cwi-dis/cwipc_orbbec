@@ -3,8 +3,8 @@ import ctypes
 import ctypes.util
 import warnings
 from typing import Optional
-from cwipc.util import CwipcError, CWIPC_API_VERSION, cwipc_tiledsource_wrapper
-from cwipc.util import cwipc_tiledsource_p
+from cwipc.util import CwipcError, CWIPC_API_VERSION, cwipc_activesource_wrapper
+from cwipc.util import cwipc_activesource_p
 from cwipc.util import _cwipc_dll_search_path_collection # type: ignore
 
 __all__ = [
@@ -40,13 +40,13 @@ def cwipc_orbbec_dll_load(libname : Optional[str]=None) -> ctypes.CDLL:
             raise RuntimeError(f'Dynamic library {libname} cannot be loaded')
     
     _cwipc_orbbec_dll_reference.cwipc_orbbec.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_char_p), ctypes.c_ulong]
-    _cwipc_orbbec_dll_reference.cwipc_orbbec.restype = cwipc_tiledsource_p
+    _cwipc_orbbec_dll_reference.cwipc_orbbec.restype = cwipc_activesource_p
     
     _cwipc_orbbec_dll_reference.cwipc_orbbec_playback.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_char_p), ctypes.c_ulong]
-    _cwipc_orbbec_dll_reference.cwipc_orbbec_playback.restype = cwipc_tiledsource_p
+    _cwipc_orbbec_dll_reference.cwipc_orbbec_playback.restype = cwipc_activesource_p
     return _cwipc_orbbec_dll_reference
         
-def cwipc_orbbec(conffile : Optional[str]=None) -> cwipc_tiledsource_wrapper:
+def cwipc_orbbec(conffile : Optional[str]=None) -> cwipc_activesource_wrapper:
     """Returns a cwipc_source object that grabs from a orbbec camera and returns cwipc object on every get() call."""
     errorString = ctypes.c_char_p()
     cconffile = None
@@ -58,10 +58,10 @@ def cwipc_orbbec(conffile : Optional[str]=None) -> cwipc_tiledsource_wrapper:
     if errorString and errorString.value:
         warnings.warn(errorString.value.decode('utf8'))
     if rv:
-        return cwipc_tiledsource_wrapper(rv)
-    raise CwipcError("cwipc_orbbec: no cwipc_tiledsource created, but no specific error returned from C library")
+        return cwipc_activesource_wrapper(rv)
+    raise CwipcError("cwipc_orbbec: no cwipc_activesource created, but no specific error returned from C library")
 
-def cwipc_orbbec_playback(conffile : Optional[str]=None) -> cwipc_tiledsource_wrapper:
+def cwipc_orbbec_playback(conffile : Optional[str]=None) -> cwipc_activesource_wrapper:
     """Returns a cwipc_source object that grabs from orbbec camera recordings and returns cwipc objects on every get() call."""
     errorString = ctypes.c_char_p()
     cconffile = None
@@ -73,5 +73,5 @@ def cwipc_orbbec_playback(conffile : Optional[str]=None) -> cwipc_tiledsource_wr
     if errorString and errorString.value:
         warnings.warn(errorString.value.decode('utf8'))
     if rv:
-        return cwipc_tiledsource_wrapper(rv)
-    raise CwipcError("cwipc_orbbecplayback: no cwipc_tiledsource created, but no specific error returned from C library")
+        return cwipc_activesource_wrapper(rv)
+    raise CwipcError("cwipc_orbbecplayback: no cwipc_activesource created, but no specific error returned from C library")
