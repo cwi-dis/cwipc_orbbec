@@ -144,4 +144,4 @@ cwipc_tiledsource* cwipc_orbbec_playback(const char* configFilename, char** erro
 // These static variables only exist to ensure the initializer is called, which registers our camera type.
 //
 int _cwipc_dummy_orbbec_initializer = _cwipc_register_capturer("orbbec", OrbbecCapture::countDevices, cwipc_orbbec);
-int _cwipc_dummy_orbbec_offline_initializer = _cwipc_register_capturer("orbbec_playback", OrbbecPlaybackCapture::countDevices, cwipc_orbbec_playback);
+int _cwipc_dummy_orbbec_playback_initializer = _cwipc_register_capturer("orbbec_playback", OrbbecPlaybackCapture::countDevices, cwipc_orbbec_playback);
