@@ -106,9 +106,9 @@ public:
     }
 
     /// Tell the capturer that each point cloud should also include RGB and/or D images and/or RGB/D capture timestamps.
-    virtual void request_auxiliary_data(bool rgb, bool depth, bool timestamps, bool skeleton) override final {
-        configuration.auxData.want_auxdata_rgb = rgb;
-        configuration.auxData.want_auxdata_depth = depth;
+    virtual void request_metadata(bool rgb, bool depth, bool timestamps, bool skeleton) override final {
+        configuration.metadata.want_rgb = rgb;
+        configuration.metadata.want_depth = depth;
     }
 
     virtual bool pointcloud_available(bool wait) override final {
@@ -209,9 +209,9 @@ public:
 protected:
     /// Load configuration from file or string.
     virtual bool _apply_config(const char* configFilename) override {
-        // Clear out old configuration but keep auxData.
+        // Clear out old configuration but keep metadata.
         OrbbecCaptureConfig newConfiguration;
-        newConfiguration.auxData = configuration.auxData;
+        newConfiguration.metadata = configuration.metadata;
         configuration = newConfiguration;
         if (configFilename == 0 || *configFilename == '\0') {
             configFilename = "cameraconfig.json";
@@ -426,7 +426,7 @@ protected:
 
 
             for (auto cam : cameras) {
-                cam->save_frameset_auxdata(newPC);
+                cam->save_frameset_metadata(newPC);
             }
 
             if (stopped) {
@@ -549,7 +549,7 @@ protected:
             _log_error("Combined pointcloud has different number of points than expected");
         }
 
-        // No need to merge aux_data: already inserted into mergedPC by each camera
+        // No need to merge metadata: already inserted into mergedPC by each camera
     }    
 public:
     OrbbecCaptureConfig configuration;

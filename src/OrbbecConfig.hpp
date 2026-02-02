@@ -50,16 +50,16 @@ struct OrbbecCaptureSyncConfig {
 
 };
 
-struct OrbbecCaptureAuxDataConfig {
-    bool want_auxdata_rgb = false;
-    bool want_auxdata_depth = false;
+struct OrbbecCaptureMetadataConfig {
+    bool want_rgb = false;
+    bool want_depth = false;
 };
 struct OrbbecCaptureConfig : public CwipcBaseCaptureConfig {
     OrbbecCaptureProcessingConfig processing;
     OrbbecCameraProcessingParameters filtering;
     OrbbecCameraHardwareConfig hardware;
     OrbbecCaptureSyncConfig sync;
-    OrbbecCaptureAuxDataConfig auxData;
+    OrbbecCaptureMetadataConfig metadata;
     int single_tile = -1;       // if singletile >=0 all the points will be the specified integer
 
     OrbbecCameraProcessingParameters camera_processing;

@@ -28,7 +28,7 @@ public:
         filtering(_configuration.filtering),
         processing(_configuration.processing),
         hardware(_configuration.hardware),
-        auxData(_configuration.auxData),
+        metadata(_configuration.metadata),
         camera_device(_handle),
         captured_frame_queue(1),
         processing_frame_queue(1),
@@ -205,27 +205,27 @@ public:
     /// The capturer will use this to populate the resultant cwipc point cloud with points
     /// from all cameras.
     cwipc_pcl_pointcloud access_current_pcl_pointcloud() { return current_pcl_pointcloud; }
-    /// Step 5: Save auxdata from frameset into given cwipc object.
-    void save_frameset_auxdata(cwipc *pc) {
+    /// Step 5: Save metadata from frameset into given cwipc object.
+    void save_frameset_metadata(cwipc *pc) {
         if (current_processed_frameset == nullptr) {
-            _log_error("save_frameset_auxdata: current_processed_frameset is NULL");
+            _log_error("save_frameset_metadata: current_processed_frameset is NULL");
             return;
         }
-        if (auxData.want_auxdata_depth || auxData.want_auxdata_rgb) {
+        if (metadata.want_depth || metadata.want_rgb) {
             std::shared_ptr<ob::Frame> depth_frame = current_processed_frameset->getFrame(OB_FRAME_DEPTH);
             std::shared_ptr<ob::Frame> color_frame = current_processed_frameset->getFrame(OB_FRAME_COLOR);
             if (depth_frame == nullptr || color_frame == nullptr) {
-                _log_error("save_frameset_auxdata: Failed to get depth frame or color frame from capture for auxiliary data");
+                _log_error("save_frameset_metadata: Failed to get depth frame or color frame from capture for metadata");
                 return;
             }
             OBFormat depth_format = depth_frame->format();
             OBFormat color_format = color_frame->format();
             if (depth_format != OB_FORMAT_Y16) {
-                _log_error("save_frameset_auxdata: Depth frame is not OB_FORMAT_Y16: " + std::to_string(depth_frame->format()));
+                _log_error("save_frameset_metadata: Depth frame is not OB_FORMAT_Y16: " + std::to_string(depth_frame->format()));
                 return;
             }
             if (color_format != OB_FORMAT_BGRA) {
-                _log_error("save_frameset_auxdata: Color frame is not OB_FORMAT_BGRA: " + std::to_string(color_frame->format()));
+                _log_error("save_frameset_metadata: Color frame is not OB_FORMAT_BGRA: " + std::to_string(color_frame->format()));
                 return;
             }
             std::shared_ptr<ob::DepthFrame> depth_image = depth_frame->as<ob::DepthFrame>();
@@ -234,7 +234,7 @@ public:
             int color_image_height_pixels = color_image->getHeight();
             int depth_image_width_pixels = depth_image->getWidth();
             int depth_image_height_pixels = depth_image->getHeight();
-            if (auxData.want_auxdata_rgb) {
+            if (metadata.want_rgb) {
                 std::string name = "rgb." + serial;
 #if 0
                 color_image = _uncompress_color_image(current_processed_frameset, color_image);
@@ -251,11 +251,11 @@ public:
                 void *pointer = malloc(size);
                 if (pointer) {
                     memcpy(pointer, color_image->getData(), size);
-                    cwipc_auxiliary_data* ap = pc->access_auxiliary_data();
+                    cwipc_metadata* ap = pc->access_metadata();
                     ap->_add(name, description, pointer, size, ::free);
                 }
             }
-            if (auxData.want_auxdata_depth) {
+            if (metadata.want_depth) {
                 std::string name = "depth." + serial;
 #if 0
                 // xxxjack map_color_to_depth??
@@ -272,7 +272,7 @@ public:
                 void *pointer = malloc(size);
                 if (pointer) {
                     memcpy(pointer, depth_image->getData(), size);
-                    cwipc_auxiliary_data* ap = pc->access_auxiliary_data();
+                    cwipc_metadata* ap = pc->access_metadata();
                     ap->_add(name, description, pointer, size, ::free);
                 }
             }
@@ -367,7 +367,7 @@ protected:
             _apply_filters_to_depth_image(depth_image); //filtering depthmap => better now because if we map depth to color then we need to filter more points.
             color_image = _uncompress_color_image(processing_frameset, color_image);
 #endif
-            // Keep frameset for auxdata, map2d3d, etc.
+            // Keep frameset for metadata, map2d3d, etc.
             current_processed_frameset = processing_frameset;
 
             //  
@@ -467,7 +467,7 @@ protected:
     OrbbecCaptureProcessingConfig& processing;
     OrbbecCameraProcessingParameters& filtering;
     OrbbecCameraHardwareConfig& hardware;
-    OrbbecCaptureAuxDataConfig& auxData; //<! Auxiliary data configuration
+    OrbbecCaptureMetadataConfig& metadata; //<! Metadata configuration
     
     Type_api_camera camera_device = nullptr;
     std::shared_ptr<ob::Pipeline> camera_pipeline = nullptr;

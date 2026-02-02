@@ -36,11 +36,11 @@ class cwipc_source_orbbec_impl_base : public cwipc_capturer_impl_base<GrabberCla
 public:
     using cwipc_capturer_impl_base<GrabberClass, CameraConfigClass>::cwipc_capturer_impl_base;
 
-    virtual void request_auxiliary_data(const std::string &name) override final {
-        cwipc_activesource::request_auxiliary_data(name);
-        this->m_grabber->request_auxiliary_data(
-            cwipc_activesource::auxiliary_data_requested("rgb"), 
-            cwipc_activesource::auxiliary_data_requested("depth"), 
+    virtual void request_metadata(const std::string &name) override final {
+        cwipc_activesource::request_metadata(name);
+        this->m_grabber->request_metadata(
+            cwipc_activesource::is_metadata_requested("rgb"), 
+            cwipc_activesource::is_metadata_requested("depth"), 
             false,
             false
         );
