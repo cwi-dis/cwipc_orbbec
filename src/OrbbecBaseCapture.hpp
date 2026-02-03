@@ -129,7 +129,7 @@ public:
         return mergedPC_is_fresh;
     }
 
-    virtual cwipc* get_pointcloud() override final {
+    virtual cwipc_pointcloud* get_pointcloud() override final {
         if (!is_playing()) {
             _log_error("get_pointcloud: not playing");
             return nullptr;
@@ -137,7 +137,7 @@ public:
         _request_new_pointcloud();
         // Wait for a fresh mergedPC to become available.
         // Note we keep the return value while holding the lock, so we can start the next grab/process/merge cycle before returning.
-        cwipc* rv;
+        cwipc_pointcloud* rv;
 
         {
             if(configuration.debug) _log_debug_thread("02. get_pointcloud: wait for fresh");
@@ -420,7 +420,7 @@ protected:
             // Step 2 - Create pointcloud, and save rgb/depth images if wanted
             if (configuration.debug) _log_debug("creating pc with ts=" + std::to_string(timestamp));
             cwipc_pcl_pointcloud pcl_pointcloud = new_cwipc_pcl_pointcloud();
-            cwipc* newPC = cwipc_from_pcl(pcl_pointcloud, timestamp, nullptr, CWIPC_API_VERSION);
+            cwipc_pointcloud* newPC = cwipc_from_pcl(pcl_pointcloud, timestamp, nullptr, CWIPC_API_VERSION);
 
 
             for (auto cam : cameras) {
@@ -561,7 +561,7 @@ protected:
     uint64_t starttime = 0;
     int numberOfPCsProduced = 0;
 
-    cwipc* mergedPC;
+    cwipc_pointcloud* mergedPC;
     std::mutex mergedPC_mutex;
 
     bool mergedPC_is_fresh = false;

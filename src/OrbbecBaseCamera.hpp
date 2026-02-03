@@ -206,7 +206,7 @@ public:
     /// from all cameras.
     cwipc_pcl_pointcloud access_current_pcl_pointcloud() { return current_pcl_pointcloud; }
     /// Step 5: Save metadata from frameset into given cwipc object.
-    void save_frameset_metadata(cwipc *pc) {
+    void save_frameset_metadata(cwipc_pointcloud *pc) {
         if (current_processed_frameset == nullptr) {
             _log_error("save_frameset_metadata: current_processed_frameset is NULL");
             return;
