@@ -11,7 +11,7 @@ class OrbbecCamera : public OrbbecBaseCamera<std::shared_ptr<ob::Device>> {
     OrbbecCamera& operator=(const OrbbecCamera&);
 
 public:
-    OrbbecCamera(Type_api_camera camera, OrbbecCaptureConfig& config, int cameraIndex);
+    OrbbecCamera(Type_api_camera camera, OrbbecCaptureConfig& config, OrbbecCaptureMetadataConfig& metadata, int cameraIndex);
 
     virtual ~OrbbecCamera() {
     }

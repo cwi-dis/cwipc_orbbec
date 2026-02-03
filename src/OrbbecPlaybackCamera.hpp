@@ -11,7 +11,7 @@ class OrbbecPlaybackCamera : public OrbbecBaseCamera<std::shared_ptr<ob::Playbac
     OrbbecPlaybackCamera& operator=(const OrbbecPlaybackCamera&);
 
 public:
-    OrbbecPlaybackCamera(Type_api_camera camera, OrbbecCaptureConfig& config, int cameraIndex, std::string filename);
+    OrbbecPlaybackCamera(Type_api_camera camera, OrbbecCaptureConfig& config, OrbbecCaptureMetadataConfig& metadata, int cameraIndex, std::string filename);
 
     virtual ~OrbbecPlaybackCamera() {
         playback_device = nullptr;

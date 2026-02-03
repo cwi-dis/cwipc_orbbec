@@ -1,8 +1,8 @@
 #include "OrbbecPlaybackCamera.hpp"
 #include "OrbbecConfig.hpp"
 
-OrbbecPlaybackCamera::OrbbecPlaybackCamera(std::shared_ptr<ob::PlaybackDevice> camera, OrbbecCaptureConfig& config, int cameraIndex, std::string filename)
-:   OrbbecBaseCamera("cwipc_orbbec: OrbbecPlaybackCamera", camera, config, cameraIndex),
+OrbbecPlaybackCamera::OrbbecPlaybackCamera(std::shared_ptr<ob::PlaybackDevice> camera, OrbbecCaptureConfig& config, OrbbecCaptureMetadataConfig& metadata, int cameraIndex, std::string filename)
+:   OrbbecBaseCamera("cwipc_orbbec: OrbbecPlaybackCamera", camera, config, metadata, cameraIndex),
     playback_filename(filename)
 {
 }

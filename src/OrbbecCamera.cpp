@@ -1,8 +1,8 @@
 #include "OrbbecCamera.hpp"
 #include "OrbbecConfig.hpp"
 
-OrbbecCamera::OrbbecCamera(std::shared_ptr<ob::Device> camera, OrbbecCaptureConfig& config, int cameraIndex)
-: OrbbecBaseCamera("cwipc_orbbec: OrbbecCamera", camera, config, cameraIndex)
+OrbbecCamera::OrbbecCamera(std::shared_ptr<ob::Device> camera, OrbbecCaptureConfig& config, OrbbecCaptureMetadataConfig& metadata, int cameraIndex)
+: OrbbecBaseCamera("cwipc_orbbec: OrbbecCamera", camera, config, metadata, cameraIndex)
 {
     if (config.record_to_directory != "") {
         record_to_file = config.record_to_directory + "/" + camera_config.serial + ".bag";

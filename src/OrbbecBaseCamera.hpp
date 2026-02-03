@@ -17,7 +17,7 @@ class OrbbecBaseCamera : public CwipcBaseCamera {
 
 
 public:
-    OrbbecBaseCamera(const std::string& _Classname, Type_api_camera _handle, OrbbecCaptureConfig& _configuration, int _camera_index)
+    OrbbecBaseCamera(const std::string& _Classname, Type_api_camera _handle, OrbbecCaptureConfig& _configuration, OrbbecCaptureMetadataConfig& _metadata, int _camera_index)
     :   CwipcBaseCamera(_Classname + ": " + _configuration.all_camera_configs[_camera_index].serial, "orbbec"),
         camera_index(_camera_index),
         configuration(_configuration),
@@ -28,7 +28,7 @@ public:
         filtering(_configuration.filtering),
         processing(_configuration.processing),
         hardware(_configuration.hardware),
-        metadata(_configuration.metadata),
+        metadata(_metadata),
         camera_device(_handle),
         captured_frame_queue(1),
         processing_frame_queue(1),

@@ -107,8 +107,8 @@ public:
 
     /// Tell the capturer that each point cloud should also include RGB and/or D images and/or RGB/D capture timestamps.
     virtual void request_metadata(bool rgb, bool depth, bool timestamps, bool skeleton) override final {
-        configuration.metadata.want_rgb = rgb;
-        configuration.metadata.want_depth = depth;
+        metadata.want_rgb = rgb;
+        metadata.want_depth = depth;
     }
 
     virtual bool pointcloud_available(bool wait) override final {
@@ -209,9 +209,7 @@ public:
 protected:
     /// Load configuration from file or string.
     virtual bool _apply_config(const char* configFilename) override {
-        // Clear out old configuration but keep metadata.
         OrbbecCaptureConfig newConfiguration;
-        newConfiguration.metadata = configuration.metadata;
         configuration = newConfiguration;
         if (configFilename == 0 || *configFilename == '\0') {
             configFilename = "cameraconfig.json";
@@ -553,6 +551,7 @@ protected:
     }    
 public:
     OrbbecCaptureConfig configuration;
+    OrbbecCaptureMetadataConfig metadata;
 protected:
     std::vector<Type_our_camera*> cameras;
     bool _is_initialized = false;

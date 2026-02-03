@@ -50,7 +50,7 @@ bool OrbbecPlaybackCapture::_create_cameras() {
             if (base_directory != "") {
                 recording_filename = base_directory + recording_filename;
             }
-            auto cam = new OrbbecPlaybackCamera(nullptr, configuration, camera_index, recording_filename);
+            auto cam = new OrbbecPlaybackCamera(nullptr, configuration, metadata, camera_index, recording_filename);
             cameras.push_back(cam);
             cd.connected = true;
         }

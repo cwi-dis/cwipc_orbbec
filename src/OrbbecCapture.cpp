@@ -67,7 +67,7 @@ bool OrbbecCapture::_create_cameras() {
             // xxxjack do we need to close it?
         } else {
             int camera_index = cameras.size();
-            auto cam = _create_single_camera(handle, configuration, camera_index);
+            auto cam = _create_single_camera(handle, configuration, metadata, camera_index);
             cameras.push_back(cam);
             cd->connected = true;
         }

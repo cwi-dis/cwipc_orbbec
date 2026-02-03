@@ -59,7 +59,6 @@ struct OrbbecCaptureConfig : public CwipcBaseCaptureConfig {
     OrbbecCameraProcessingParameters filtering;
     OrbbecCameraHardwareConfig hardware;
     OrbbecCaptureSyncConfig sync;
-    OrbbecCaptureMetadataConfig metadata;
     int single_tile = -1;       // if singletile >=0 all the points will be the specified integer
 
     OrbbecCameraProcessingParameters camera_processing;
