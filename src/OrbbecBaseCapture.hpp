@@ -18,8 +18,11 @@ public:
 
 
     virtual ~OrbbecBaseCapture() {
-        uint64_t stopTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         _unload_cameras();
+        if (mergedPC) {
+            mergedPC->free();
+            mergedPC = nullptr;
+        }
     }
 
     virtual bool can_start() override final {
@@ -428,6 +431,7 @@ protected:
             }
 
             if (stopped) {
+                newPC->free();
                 break;
             }
             if(configuration.debug) _log_debug_thread("4. all cameras->process_pointcloud_from_frameset()");
@@ -437,6 +441,7 @@ protected:
             }
 
             if (stopped) {
+                newPC->free();
                 break;
             }
             if(configuration.debug) _log_debug_thread("5. wait  for mergedpc_mutex");
@@ -449,11 +454,11 @@ protected:
                 mergedPC = nullptr;
             }
 
+            mergedPC = newPC;
             if (stopped) {
                 break;
             }
 
-            mergedPC = newPC;
             if(configuration.debug) _log_debug_thread("6. all cameras->wait_for_pointcloud_processed()");
             // Step 4: wait for frame processing to complete.
             for (auto cam : cameras) {
