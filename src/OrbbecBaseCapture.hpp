@@ -566,7 +566,7 @@ protected:
     uint64_t starttime = 0;
     int numberOfPCsProduced = 0;
 
-    cwipc_pointcloud* mergedPC;
+    cwipc_pointcloud* mergedPC = nullptr;
     std::mutex mergedPC_mutex;
 
     bool mergedPC_is_fresh = false;
