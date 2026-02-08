@@ -106,7 +106,7 @@ cwipc_activesource* cwipc_orbbec(const char *configFilename, char **errorMessage
     }
     cwipc_log_set_errorbuf(errorMessage);
     cwipc_source_orbbec_impl *rv = new cwipc_source_orbbec_impl(configFilename);
-    if (rv && rv->is_playing()) {
+    if (rv && rv->can_start()) {
         cwipc_log_set_errorbuf(nullptr);
         return rv;
     }
