@@ -15,8 +15,8 @@ int OrbbecCapture::countDevices() {
 bool OrbbecCapture::_apply_auto_config() {
     ob::Context context;
     auto deviceList = context.queryDeviceList();
-
-    for (int i = 0; i < deviceList->deviceCount(); i++) {
+    int nDevice = deviceList->getCount();
+    for (int i = 0; i < nDevice; i++) {
         OrbbecCameraConfig config;
 
         config.type = "orbbec";
