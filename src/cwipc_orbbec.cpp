@@ -15,6 +15,8 @@
 #include "OrbbecPlaybackCapture.hpp"
 #include "OrbbecCamera.hpp"
 #include "OrbbecPlaybackCamera.hpp"
+#define stringify(x) _stringify(x)
+#define _stringify(x) #x
 
 
 static bool _api_versioncheck(char **errorMessage, uint64_t apiVersion) {
@@ -99,6 +101,14 @@ public:
 //
 // C-compatible entry points
 //
+
+const char *cwipc_get_version_orbbec() {
+#ifdef CWIPC_VERSION
+    return stringify(CWIPC_VERSION);
+#else
+    return "unknown";
+#endif
+}
 
 cwipc_activesource* cwipc_orbbec(const char *configFilename, char **errorMessage, uint64_t apiVersion) {
     if (!_api_versioncheck(errorMessage, apiVersion)) {

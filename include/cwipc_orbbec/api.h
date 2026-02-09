@@ -15,6 +15,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/** \brief
+ * Returns version string for orbbec capturer module.
+ * As a side effect this checks that dependencies have been installed correctly, and it will install the
+ * capturer for use with the auto-capturer.
+ */
+_CWIPC_ORBBEC_EXPORT const char *cwipc_get_version_orbbec();
 
 /** \brief Capture pointclouds from Orbbec cameras.
  * \param configFilename An option string with the filename of the camera configuration file.

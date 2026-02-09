@@ -14,6 +14,10 @@ TEST_FIXTURES_DIR=os.path.join(_topdir, "tests", "fixtures")
 TEST_FIXTURES_PLAYBACK_CONFIG=os.path.join(TEST_FIXTURES_DIR, "input", "orbbec_recording", "cameraconfig.json")
 
 class TestApi(unittest.TestCase):
+        
+    def test_0_check_module_orbbec(self):
+        ok = cwipc.cwipc_check_module('orbbec')
+        self.assertTrue(ok)
     
     def _open_grabber(self):
         if not 'CWIPC_TEST_HAVE_ORBBEC_HARDWARE' in os.environ:

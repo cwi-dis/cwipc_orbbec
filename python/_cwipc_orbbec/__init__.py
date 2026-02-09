@@ -8,6 +8,7 @@ from cwipc.util import cwipc_activesource_p
 from cwipc.util import _cwipc_dll_search_path_collection # type: ignore
 
 __all__ = [
+    "cwipc_get_version_module",
     "cwipc_orbbec",
     "cwipc_orbbec_playback",
     "cwipc_orbbec_dll_load"
@@ -39,13 +40,22 @@ def cwipc_orbbec_dll_load(libname : Optional[str]=None) -> ctypes.CDLL:
         if not _cwipc_orbbec_dll_reference:
             raise RuntimeError(f'Dynamic library {libname} cannot be loaded')
     
+    _cwipc_orbbec_dll_reference.cwipc_get_version_orbbec.argtypes = []
+    _cwipc_orbbec_dll_reference.cwipc_get_version_orbbec.restype = ctypes.c_char_p
+
     _cwipc_orbbec_dll_reference.cwipc_orbbec.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_char_p), ctypes.c_ulong]
     _cwipc_orbbec_dll_reference.cwipc_orbbec.restype = cwipc_activesource_p
     
     _cwipc_orbbec_dll_reference.cwipc_orbbec_playback.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_char_p), ctypes.c_ulong]
     _cwipc_orbbec_dll_reference.cwipc_orbbec_playback.restype = cwipc_activesource_p
     return _cwipc_orbbec_dll_reference
-        
+
+
+def cwipc_get_version_module() -> str:
+    c_version = cwipc_orbbec_dll_load().cwipc_get_version_orbbec()
+    version = c_version.decode('utf8')
+    return version
+ 
 def cwipc_orbbec(conffile : Optional[str]=None) -> cwipc_activesource_wrapper:
     """Returns a cwipc_source object that grabs from a orbbec camera and returns cwipc object on every get() call."""
     errorString = ctypes.c_char_p()
