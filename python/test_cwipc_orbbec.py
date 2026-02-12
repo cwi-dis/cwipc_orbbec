@@ -72,7 +72,8 @@ class TestApi(unittest.TestCase):
         if not os.path.exists(TEST_FIXTURES_PLAYBACK_CONFIG):
             self.skipTest(f'Playback config file {TEST_FIXTURES_PLAYBACK_CONFIG} not found')
         grabber = _cwipc_orbbec.cwipc_orbbec_playback(TEST_FIXTURES_PLAYBACK_CONFIG)
-        grabber.start()
+        didStart = grabber.start()
+        self.assertTrue(didStart)
         self.assertFalse(grabber.eof())
         self.assertTrue(grabber.available(True))
         pc = grabber.get()
