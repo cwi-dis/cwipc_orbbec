@@ -62,6 +62,9 @@ void OrbbecCaptureConfig::_from_json(const json &json_data) {
         config.all_camera_configs.push_back(camera_config);
         camera_index++;
     }
+    if (camera_index == 0) {
+        cwipc_log(CWIPC_LOG_LEVEL_WARNING, "cwipc_orbbec", "No cameras in configuration");
+    }
 }
 
 void OrbbecCaptureConfig::_to_json(json& json_data, bool for_recording) {

@@ -105,6 +105,10 @@ public:
     }
 
     virtual std::string config_get() override {
+        if (cameras.size() == 0) {
+            _log_error("Must start() before getting config");
+            return "";
+        }
         return configuration.to_string();
     }
 
