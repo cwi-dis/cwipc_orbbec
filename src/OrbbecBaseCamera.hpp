@@ -85,6 +85,7 @@ public:
         if (camera_started && camera_pipeline != nullptr) {
             camera_pipeline->stop();
             camera_pipeline = nullptr;
+            camera_started = false;
         }
         processing_done = true;
         processing_done_cv.notify_one();
@@ -313,6 +314,7 @@ protected:
             ///
             std::shared_ptr<ob::FrameSet> processing_frameset;
             bool ok = processing_frame_queue.wait_dequeue_timed(processing_frameset, std::chrono::milliseconds(10000));
+            if (end_of_stream_reached) break;
             if (!ok) {
                 if (waiting_for_capture) _log_warning("processing thread dequeue timeout");
                 std::this_thread::yield();
@@ -397,6 +399,11 @@ protected:
             //
             // No cleanup needed, orbbec API handles it.
             //
+        }
+        if (camera_started && camera_pipeline != nullptr) {
+            camera_pipeline->stop();
+            camera_pipeline = nullptr;
+            camera_started = false;
         }
         if (debug)_log_debug_thread("processing thread exiting");
     }
