@@ -493,7 +493,10 @@ protected:
 
     bool _capture_all_cameras(uint64_t& timestamp) {
         // xxxjack does not take master into account
-        // xxxjack different from kinect
+        // xxxjack different from kinect playback.
+        // The code here presumes that the hardware cameras will be more-or-less synchronized:
+        // We start getting any frame from the first camera (first_timestamp is 0),
+        // then for subsequent cameras we ensure we don't get a frame with a timestamp that is earlier.
         uint64_t first_timestamp = 0;
         for(auto cam : cameras) {
             uint64_t this_cam_timestamp = cam->wait_for_captured_frameset(first_timestamp);
