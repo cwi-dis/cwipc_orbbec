@@ -34,6 +34,10 @@ public:
             _log_error("start() called but not initialized");
             return false;
         }
+        if (is_playing()) {
+            _log_warning("start() called but already started");
+            return false;
+        }
         //
         // Initialize hardware capture setting (for all cameras)
         //
