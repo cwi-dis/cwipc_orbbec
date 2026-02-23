@@ -1,5 +1,10 @@
 #ifndef cwipc_orbbec_api_h
 #define cwipc_orbbec_api_h
+/** @file cwipc_orbbec/api.h
+ * Header for cwipc Orbbec capturer, including both C and C++ interfaces.
+ *
+ * This header is intended to be the only header needed to use the cwipc Orbbec capturer.
+ */
 
 #include "cwipc_util/api.h"
 
