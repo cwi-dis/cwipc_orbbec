@@ -65,6 +65,7 @@ struct OrbbecCaptureConfig : public CwipcBaseCaptureConfig {
     std::string record_to_directory = ""; // If non-empty all camera streams will be recorded to this directory.
     bool new_timestamps = false; // If true new timestamps are generated (otherwise original timestamps from capture time)
     bool debug = false;
+    bool apiDebug = false;
     // We could probably also allow overriding GPU id and model path, but no need for now.
     // per camera data
     std::vector<OrbbecCameraConfig> all_camera_configs;

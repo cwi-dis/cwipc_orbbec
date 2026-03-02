@@ -17,6 +17,43 @@ public:
     using CwipcBaseCapture::CwipcBaseCapture;
 
 
+    static void _orbbec_message_cb(OBLogSeverity level, const char *message) {
+        std::string orbbec_level = "";
+        cwipc_log_level cwipc_level = CWIPC_LOG_LEVEL_WARNING;
+        switch(level) {
+        case OB_LOG_SEVERITY_FATAL:
+            cwipc_level = CWIPC_LOG_LEVEL_ERROR;
+            orbbec_level = "(fatal): ";
+            break;
+        case OB_LOG_SEVERITY_ERROR:
+            cwipc_level = CWIPC_LOG_LEVEL_ERROR;
+            break;
+        case OB_LOG_SEVERITY_WARN:
+            cwipc_level = CWIPC_LOG_LEVEL_WARNING;
+            break;
+        case OB_LOG_SEVERITY_INFO:
+            cwipc_level = CWIPC_LOG_LEVEL_TRACE;
+            break;
+        case OB_LOG_SEVERITY_DEBUG:
+            cwipc_level = CWIPC_LOG_LEVEL_DEBUG;
+            break;
+        default:
+            cwipc_level = CWIPC_LOG_LEVEL_WARNING;
+            orbbec_level = "(unknown-orbbec-level): ";
+            break;
+        }
+        std::string msg = orbbec_level + message;
+        cwipc_log(cwipc_level, "orbbec_sdk",msg );
+    }
+
+    static void _install_orbbec_logger() {
+        ob::Context::setLoggerToCallback(OB_LOG_SEVERITY_INFO, _orbbec_message_cb);
+    }
+
+    static void _uninstall_orbbec_logger() {
+        ob::Context::setLoggerToConsole(OB_LOG_SEVERITY_ERROR);
+    }
+
     virtual ~OrbbecBaseCapture() {
         _unload_cameras();
         if (mergedPC) {
@@ -99,7 +136,12 @@ public:
         if (cwipc_log_get_level() >= CWIPC_LOG_LEVEL_DEBUG) {
             configuration.debug = true;
         }
-
+        if (configuration.apiDebug) {
+            _install_orbbec_logger();
+        } else {
+            _uninstall_orbbec_logger();
+        }
+        
         auto camera_config_count = configuration.all_camera_configs.size();
         if (camera_config_count == 0) {
             return false;
