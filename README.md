@@ -1,4 +1,8 @@
-# cwipc_orbbec
+# WARNING. This repository is outdated.
+
+This `cwipc_orbbec` repository has been merged into the <https://github.com/cwi-dis/cwipc> repository as of August 2026.
+
+## cwipc_orbbec
 
 This project has software for capturing point clouds using Orbbec depth
 cameras. The software turns Orbbec depth and color frames into cwipc
